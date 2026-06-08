@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Upload, Trash2, User, CheckCircle2, Dumbbell, Clock, Zap, Info, ChevronDown, ChevronUp } from 'lucide-react';
+import { Download, Upload, Trash2, User, CheckCircle2, Dumbbell, Clock, Zap, Info, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
 import useStore from '../store/useStore';
 import { db } from '../db/db';
+import ProgramRekomendasiPage from './ProgramRekomendasiPage';
 
 // ── Data Program Latihan ─────────────────────────────────────────────────────
 
@@ -208,54 +209,74 @@ function MuscleChip({ id }) {
   );
 }
 
-function ActivitySelector({ value, onChange }) {
+function ActivitySelector({ value, onChange, onViewProgram }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {TINGKAT_AKTIVITAS.map((item) => {
         const isActive = value === item.id;
         return (
-          <button
-            key={item.id}
-            onClick={() => onChange(item.id)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: '12px 14px',
-              borderRadius: 'var(--radius-lg)',
-              border: `2px solid ${isActive ? 'var(--color-primary)' : 'var(--color-border)'}`,
-              background: isActive ? 'var(--color-primary-pale)' : 'var(--color-surface-2)',
-              cursor: 'pointer',
-              transition: 'all 0.18s',
-              textAlign: 'left',
-              width: '100%',
-            }}
-          >
-            <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>{item.ikon}</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
+          <div key={item.id} style={{ display: 'flex', gap: 8 }}>
+            {/* Pilih sebagai tingkat aktivitas */}
+            <button
+              onClick={() => onChange(item.id)}
+              style={{
+                flex: 1,
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '12px 14px',
+                borderRadius: 'var(--radius-lg)',
+                border: `2px solid ${isActive ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                background: isActive ? 'var(--color-primary-pale)' : 'var(--color-surface-2)',
+                cursor: 'pointer',
+                transition: 'all 0.18s',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>{item.ikon}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 14, fontWeight: 700,
+                  color: isActive ? 'var(--color-primary)' : 'var(--color-text)',
+                }}>
+                  {item.label}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
+                  {item.deskripsi}
+                </div>
+              </div>
               <div style={{
-                fontSize: 14, fontWeight: 700,
-                color: isActive ? 'var(--color-primary)' : 'var(--color-text)',
+                flexShrink: 0, fontSize: 10, fontWeight: 700,
+                color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                background: isActive ? 'var(--color-primary-pale)' : 'var(--color-surface-3)',
+                padding: '3px 8px', borderRadius: 99, letterSpacing: '0.02em',
               }}>
-                {item.label}
+                {item.hariPerMinggu}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
-                {item.deskripsi}
-              </div>
-            </div>
-            <div style={{
-              flexShrink: 0, fontSize: 10, fontWeight: 700,
-              color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)',
-              background: isActive ? 'var(--color-primary-pale)' : 'var(--color-surface-3)',
-              padding: '3px 8px', borderRadius: 99,
-              letterSpacing: '0.02em',
-            }}>
-              {item.hariPerMinggu}
-            </div>
-            {isActive && (
-              <CheckCircle2 size={18} color="var(--color-primary)" style={{ flexShrink: 0 }} />
-            )}
-          </button>
+              {isActive && <CheckCircle2 size={18} color="var(--color-primary)" style={{ flexShrink: 0 }} />}
+            </button>
+
+            {/* Tombol lihat program */}
+            <button
+              onClick={() => onViewProgram(item.id)}
+              title="Lihat rekomendasi program"
+              style={{
+                flexShrink: 0, width: 44,
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-surface-2)',
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.18s',
+                color: 'var(--color-text-muted)',
+              }}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
         );
       })}
+      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'center', marginTop: 4 }}>
+        Ketuk tombol  untuk lihat rekomendasi program latihan
+      </div>
     </div>
   );
 }
@@ -518,6 +539,7 @@ export default function ProfileTab() {
   const macros = hitungTDEE();
   const [saved, setSaved] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [programPageTingkat, setProgramPageTingkat] = useState(null); // null = tutup
 
   const handleSave = () => {
     setSaved(true);
@@ -581,6 +603,18 @@ export default function ProfileTab() {
       : 'Pemeliharaan';
 
   return (
+    <>
+      {/* ── Program Rekomendasi Page (overlay slide-in) ── */}
+      <AnimatePresence>
+        {programPageTingkat && (
+          <ProgramRekomendasiPage
+            key="program-page"
+            tingkat={programPageTingkat}
+            onBack={() => setProgramPageTingkat(null)}
+          />
+        )}
+      </AnimatePresence>
+
     <div>
       <div className="page-header">
         <div className="page-title">Profil <span>Saya</span></div>
@@ -702,19 +736,9 @@ export default function ProfileTab() {
             <ActivitySelector
               value={profil.tingkatAktivitas}
               onChange={(val) => setProfil({ tingkatAktivitas: val })}
+              onViewProgram={(tingkat) => setProgramPageTingkat(tingkat)}
             />
           </div>
-        </motion.div>
-
-        {/* Rekomendasi Program Latihan */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <div style={{ marginBottom: 10 }}>
-            <div className="section-title">Rekomendasi Program Latihan</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>
-              Berdasarkan tingkat aktivitas yang kamu pilih
-            </div>
-          </div>
-          <RekomendasiProgram tingkatAktivitas={profil.tingkatAktivitas || 'sedang'} />
         </motion.div>
 
         {/* Macro Summary */}
@@ -812,5 +836,6 @@ export default function ProfileTab() {
         <div style={{ height: 8 }} />
       </div>
     </div>
+    </>
   );
 }
