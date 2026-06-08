@@ -58,7 +58,7 @@ const KECEPATAN = [
     sub: 'Seimbang & efektif',
     delta: { surplus: '+400', defisit: '-400' },
     perMinggu: { surplus: '~0.4 kg/minggu', defisit: '~0.4 kg/minggu' },
-    desc: 'Standar industri. Balance antara kecepatan hasil dan kenyamanan.',
+    desc: 'Standar. Balance antara kecepatan hasil dan kenyamanan.',
     ikon: Clock,
     color: '#FF6B00',
     bg: 'rgba(255,107,0,0.12)',
