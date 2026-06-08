@@ -7,6 +7,7 @@ import {
   Dumbbell,
 } from 'lucide-react';
 import useStore from '../store/useStore';
+import { generateRecommendedSchedule } from '../utils/scheduleGenerator';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -514,6 +515,122 @@ function StepAktivitas({ data, onChange, onBack, onNext }) {
   );
 }
 
+const DAYS_OPTIONS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+
+function StepKesibukanJadwal({ data, onChange, onBack, onNext }) {
+  const pekerjaanOptions = [
+    { id: 'pelajar', label: 'Pelajar', desc: 'Jadwal sekolah teratur pagi-siang', ikon: '🏫' },
+    { id: 'mahasiswa', label: 'Mahasiswa', desc: 'Kuliah & jadwal belajar fleksibel', ikon: '🎓' },
+    { id: 'kantoran', label: 'Pekerja Kantoran', desc: 'Jam kerja tetap pagi-sore', ikon: '💼' },
+    { id: 'freelance', label: 'Freelancer / Wirausaha', desc: 'Waktu kerja mandiri & fleksibel', ikon: '💻' },
+    { id: 'irt', label: 'Ibu Rumah Tangga / Di Rumah', desc: 'Aktivitas domestik & keluarga', ikon: '🏠' },
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '0 20px', flex: 1 }}>
+      <div>
+        <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em', marginBottom: 6 }}>
+          Rutinitas & Kesibukanmu
+        </div>
+        <div style={{ fontSize: 14, color: 'var(--color-text-muted)' }}>
+          Kami akan menyusun rekomendasi jadwal latihan, makan, dan tidur berdasarkan kesibukan harianmu.
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* Kesibukan Utama */}
+        <div className="input-group">
+          <label className="input-label" style={{ marginBottom: 8 }}>Kesibukan Utama</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {pekerjaanOptions.map(opt => {
+              const isActive = data.pekerjaan === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => onChange({ pekerjaan: opt.id })}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 14px', borderRadius: 'var(--radius-lg)',
+                    border: `2px solid ${isActive ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                    background: isActive ? 'var(--color-primary-pale)' : 'var(--color-surface-2)',
+                    color: isActive ? 'var(--color-primary)' : 'var(--color-text-sub)',
+                    cursor: 'pointer', transition: 'all 0.18s', textAlign: 'left',
+                  }}
+                >
+                  <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>{opt.ikon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: isActive ? 'var(--color-primary)' : 'var(--color-text)', marginBottom: 2 }}>
+                      {opt.label}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{opt.desc}</div>
+                  </div>
+                  {isActive && <Check size={14} color="var(--color-primary)" style={{ flexShrink: 0 }} />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Jam Sibuk (jika ada) */}
+        {data.pekerjaan !== 'irt' && (
+          <div className="input-row" style={{ display: 'flex', gap: 10 }}>
+            <div className="input-group" style={{ flex: 1 }}>
+              <label className="input-label">Jam Mulai Sibuk</label>
+              <input
+                type="time" className="input" style={{ padding: '8px 12px' }}
+                value={data.jamMulai}
+                onChange={e => onChange({ jamMulai: e.target.value })}
+              />
+            </div>
+            <div className="input-group" style={{ flex: 1 }}>
+              <label className="input-label">Jam Selesai Sibuk</label>
+              <input
+                type="time" className="input" style={{ padding: '8px 12px' }}
+                value={data.jamSelesai}
+                onChange={e => onChange({ jamSelesai: e.target.value })}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Hari Sibuk */}
+        <div className="input-row" style={{ display: 'flex', gap: 10 }}>
+          <div className="input-group" style={{ flex: 1 }}>
+            <label className="input-label">Hari Mulai Sibuk</label>
+            <select
+              className="input" style={{ padding: '8px 10px', fontSize: 13 }}
+              value={data.hariMulai}
+              onChange={e => onChange({ hariMulai: e.target.value })}
+            >
+              {DAYS_OPTIONS.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+          <div className="input-group" style={{ flex: 1 }}>
+            <label className="input-label">Hari Selesai Sibuk</label>
+            <select
+              className="input" style={{ padding: '8px 10px', fontSize: 13 }}
+              value={data.hariSelesai}
+              onChange={e => onChange({ hariSelesai: e.target.value })}
+            >
+              {DAYS_OPTIONS.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <NavButtons
+        onBack={onBack}
+        onNext={onNext}
+        nextDisabled={!data.pekerjaan || !data.hariMulai || !data.hariSelesai || (data.pekerjaan !== 'irt' && (!data.jamMulai || !data.jamSelesai))}
+      />
+    </div>
+  );
+}
+
 function StepDone({ data, onFinish }) {
   // Hitung preview kalori
   const bmr = data.gender === 'pria'
@@ -590,6 +707,9 @@ function StepDone({ data, onFinish }) {
             { label: 'Tujuan', value: goalLabel },
             { label: 'Kecepatan', value: speedLabel },
             { label: 'Aktivitas', value: TINGKAT_AKTIVITAS.find(a => a.id === data.tingkatAktivitas)?.label || '-' },
+            { label: 'Pekerjaan', value: { pelajar: 'Pelajar', mahasiswa: 'Mahasiswa', kantoran: 'Karyawan', freelance: 'Freelancer', irt: 'Ibu Rumah Tangga' }[data.pekerjaan] || '-' },
+            { label: 'Hari Sibuk', value: `${data.hariMulai} - ${data.hariSelesai}` },
+            ...(data.pekerjaan !== 'irt' ? [{ label: 'Jam Sibuk', value: `${data.jamMulai} - ${data.jamSelesai}` }] : []),
           ].map(item => (
             <div key={item.label} style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -619,10 +739,10 @@ function StepDone({ data, onFinish }) {
 
 // ── Main Onboarding Component ─────────────────────────────────────────────────
 
-const TOTAL_STEPS = 4; // tidak termasuk splash (0) dan done (5)
+const TOTAL_STEPS = 5; // tidak termasuk splash (0) dan done (6)
 
 export default function OnboardingScreen() {
-  const { setProfil } = useStore();
+  const { setProfil, setJadwalHarian } = useStore();
 
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -635,6 +755,11 @@ export default function OnboardingScreen() {
     tipeTarget: '',
     kecepatanProgress: 'normal',
     tingkatAktivitas: '',
+    pekerjaan: 'kantoran',
+    jamMulai: '08:00',
+    jamSelesai: '17:00',
+    hariMulai: 'Senin',
+    hariSelesai: 'Jumat',
   });
 
   const updateData = (updates) => setFormData(prev => ({ ...prev, ...updates }));
@@ -643,6 +768,17 @@ export default function OnboardingScreen() {
   const back = () => setStep(s => s - 1);
 
   const finishOnboarding = () => {
+    // Generate recommended schedule
+    const recommended = generateRecommendedSchedule({
+      pekerjaan: formData.pekerjaan,
+      jamMulai: formData.jamMulai,
+      jamSelesai: formData.jamSelesai,
+      hariMulai: formData.hariMulai,
+      hariSelesai: formData.hariSelesai,
+      targetTidur: 7.5, // default sleep target
+    });
+    setJadwalHarian(recommended);
+
     setProfil({
       nama: formData.nama,
       gender: formData.gender,
@@ -678,8 +814,8 @@ export default function OnboardingScreen() {
         </AnimatePresence>
       )}
 
-      {/* Steps 1–4 */}
-      {step >= 1 && step <= 4 && (
+      {/* Steps 1–5 */}
+      {step >= 1 && step <= 5 && (
         <>
           {/* Header */}
           <div style={{ padding: '16px 20px 8px', flexShrink: 0 }}>
@@ -717,13 +853,19 @@ export default function OnboardingScreen() {
                   <StepAktivitas data={formData} onChange={updateData} onBack={back} onNext={next} />
                 </motion.div>
               )}
+              {step === 5 && (
+                <motion.div key="s5" variants={stepVariants} initial="initial" animate="animate" exit="exit"
+                  style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <StepKesibukanJadwal data={formData} onChange={updateData} onBack={back} onNext={next} />
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </>
       )}
 
-      {/* Step 5 — Done */}
-      {step === 5 && (
+      {/* Step 6 — Done */}
+      {step === 6 && (
         <div style={{
           flex: 1, overflowY: 'auto',
           display: 'flex', flexDirection: 'column',

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, Droplets, Moon, Dumbbell, TrendingUp, ChevronRight, Plus, Zap, User, MessageSquare, Trash2, X, RotateCcw } from 'lucide-react';
+import { Flame, Droplets, Moon, Dumbbell, TrendingUp, ChevronRight, Plus, Zap, User, MessageSquare, Trash2, X, RotateCcw, Copy, Sparkles } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import useStore from '../store/useStore';
+import { generateRecommendedSchedule } from '../utils/scheduleGenerator';
 
 const MOTIVATIONAL_QUOTES = [
   "Dorong diri Anda sendiri, karena tidak ada orang lain yang akan melakukannya untuk Anda.",
@@ -80,9 +81,32 @@ export default function DashboardTab() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [tempJadwal, setTempJadwal] = useState([]);
 
+  const [activeDay, setActiveDay] = useState(() => {
+    return new Date().toLocaleDateString('id-ID', { weekday: 'long' });
+  });
+
+  const [copySuccess, setCopySuccess] = useState(false);
+  
+  // Recommendation Form state
+  const [showRecForm, setShowRecForm] = useState(false);
+  const [recPekerjaan, setRecPekerjaan] = useState('kantoran');
+  const [recJamMulai, setRecJamMulai] = useState('08:00');
+  const [recJamSelesai, setRecJamSelesai] = useState('17:00');
+  const [recHariMulai, setRecHariMulai] = useState('Senin');
+  const [recHariSelesai, setRecHariSelesai] = useState('Jumat');
+
+  const getJadwalForDay = (jadwal, hari) => {
+    if (!jadwal) return [];
+    if (Array.isArray(jadwal)) return jadwal;
+    return jadwal[hari] || [];
+  };
+
+  const currentDayJadwal = getJadwalForDay(jadwalHarian, activeDay);
+
   const openEditModal = () => {
-    setTempJadwal([...jadwalHarian]);
+    setTempJadwal([...currentDayJadwal]);
     setShowEditModal(true);
+    setShowRecForm(false);
   };
 
   const updateTempItem = (index, updates) => {
@@ -120,8 +144,48 @@ export default function DashboardTab() {
 
   const saveJadwal = () => {
     const sorted = [...tempJadwal].sort((a, b) => a.start.localeCompare(b.start));
-    setJadwalHarian(sorted);
+    if (Array.isArray(jadwalHarian)) {
+      const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+      const newJadwal = {};
+      days.forEach(d => {
+        newJadwal[d] = d === activeDay ? sorted : [...jadwalHarian];
+      });
+      setJadwalHarian(newJadwal);
+    } else {
+      setJadwalHarian({
+        ...jadwalHarian,
+        [activeDay]: sorted
+      });
+    }
     setShowEditModal(false);
+  };
+
+  const copyToAllDays = () => {
+    const sorted = [...tempJadwal].sort((a, b) => a.start.localeCompare(b.start));
+    const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    const newJadwal = {};
+    days.forEach(d => {
+      newJadwal[d] = [...sorted];
+    });
+    setJadwalHarian(newJadwal);
+    setCopySuccess(true);
+    setTimeout(() => {
+      setCopySuccess(false);
+    }, 2000);
+  };
+
+  const applyRecommendation = () => {
+    const recommended = generateRecommendedSchedule({
+      pekerjaan: recPekerjaan,
+      jamMulai: recJamMulai,
+      jamSelesai: recJamSelesai,
+      hariMulai: recHariMulai,
+      hariSelesai: recHariSelesai,
+      targetTidur: profil.targetTidur || 7.5,
+    });
+    setJadwalHarian(recommended);
+    setTempJadwal(recommended[activeDay] || []);
+    setShowRecForm(false);
   };
 
   const macros = hitungTDEE();
@@ -279,66 +343,105 @@ export default function DashboardTab() {
         {/* Daily Schedule */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <div className="card">
-            <div className="section-header">
-              <span className="section-title">Jadwal Harian</span>
+            <div className="section-header" style={{ marginBottom: 12 }}>
+              <span className="section-title">Jadwal Harian ({activeDay})</span>
               <button className="section-action" onClick={openEditModal}>Kelola</button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
-              {jadwalHarian.map((item, i) => {
-                const now = new Date();
-                const [sh, sm] = item.start.split(':').map(Number);
-                const [eh, em] = item.end.split(':').map(Number);
 
-                const startDate = new Date(); startDate.setHours(sh, sm, 0, 0);
-                const endDate = new Date(); endDate.setHours(eh, em, 0, 0);
-
-                if (endDate < startDate) {
-                  if (now >= startDate) {
-                    endDate.setDate(endDate.getDate() + 1);
-                  } else {
-                    startDate.setDate(startDate.getDate() - 1);
-                  }
-                }
-
-                const isCurrent = now >= startDate && now < endDate;
-                const isPast = now >= endDate;
-
+            {/* Day Selector Pills */}
+            <div style={{
+              display: 'flex', gap: 6, overflowX: 'auto',
+              paddingBottom: 10, marginBottom: 12,
+              scrollbarWidth: 'none', msOverflowStyle: 'none'
+            }}>
+              {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map(day => {
+                const isSelected = activeDay === day;
+                const isToday = new Date().toLocaleDateString('id-ID', { weekday: 'long' }) === day;
                 return (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
-                    padding: '9px var(--space-3)',
-                    borderRadius: 'var(--radius-lg)',
-                    background: isCurrent ? 'var(--color-primary-pale)' : 'transparent',
-                    border: isCurrent ? '1px solid rgba(255,107,0,0.2)' : '1px solid transparent',
-                  }}>
-                    <div style={{
-                      width: 76, textAlign: 'center',
-                      fontSize: 10, fontWeight: 700, letterSpacing: '-0.01em',
-                      color: isCurrent ? 'var(--color-primary)' : isPast ? 'var(--color-text-muted)' : 'var(--color-text-sub)',
-                    }}>{item.start} - {item.end}</div>
-                    <div style={{
-                      width: 34, height: 34, borderRadius: '50%',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: isPast ? 'var(--color-surface-3)' : `${item.warna}20`,
-                      fontSize: 16,
-                      opacity: isPast && !isCurrent ? 0.4 : 1,
-                    }}>
-                      {item.icon}
-                    </div>
-                    <div style={{
-                      flex: 1, fontSize: 13, fontWeight: isCurrent ? 700 : 500,
-                      color: isPast && !isCurrent ? 'var(--color-text-muted)' : 'var(--color-text)',
-                      letterSpacing: '0.005em',
-                    }}>{item.label}</div>
-                    {isCurrent && (
-                      <span className="badge badge--orange" style={{ fontSize: 9, padding: '2px 8px' }}>Sekarang</span>
-                    )}
-                    {isPast && !isCurrent && (
-                      <span style={{ color: 'var(--color-success)', fontSize: 14 }}>✓</span>
-                    )}
-                  </div>
+                  <button
+                    key={day}
+                    onClick={() => setActiveDay(day)}
+                    style={{
+                      padding: '6px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700,
+                      border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+                      background: isSelected 
+                        ? 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)' 
+                        : 'var(--color-surface-2)',
+                      color: isSelected ? 'white' : 'var(--color-text-sub)',
+                      cursor: 'pointer', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      boxShadow: isSelected ? 'var(--shadow-sm)' : 'none',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {day} {isToday && <span style={{ width: 5, height: 5, borderRadius: '50%', background: isSelected ? 'white' : 'var(--color-primary)' }} />}
+                  </button>
                 );
               })}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+              {currentDayJadwal.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--color-text-muted)', fontSize: 13 }}>
+                  Belum ada jadwal untuk hari {activeDay}. Ketuk "Kelola" untuk menambahkan.
+                </div>
+              ) : (
+                currentDayJadwal.map((item, i) => {
+                  const now = new Date();
+                  const [sh, sm] = item.start.split(':').map(Number);
+                  const [eh, em] = item.end.split(':').map(Number);
+
+                  const startDate = new Date(); startDate.setHours(sh, sm, 0, 0);
+                  const endDate = new Date(); endDate.setHours(eh, em, 0, 0);
+
+                  if (endDate < startDate) {
+                    if (now >= startDate) {
+                      endDate.setDate(endDate.getDate() + 1);
+                    } else {
+                      startDate.setDate(startDate.getDate() - 1);
+                    }
+                  }
+
+                  const isCurrent = now >= startDate && now < endDate;
+                  const isPast = now >= endDate;
+
+                  return (
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                      padding: '9px var(--space-3)',
+                      borderRadius: 'var(--radius-lg)',
+                      background: isCurrent ? 'var(--color-primary-pale)' : 'transparent',
+                      border: isCurrent ? '1px solid rgba(255,107,0,0.2)' : '1px solid transparent',
+                    }}>
+                      <div style={{
+                        width: 76, textAlign: 'center',
+                        fontSize: 10, fontWeight: 700, letterSpacing: '-0.01em',
+                        color: isCurrent ? 'var(--color-primary)' : isPast ? 'var(--color-text-muted)' : 'var(--color-text-sub)',
+                      }}>{item.start} - {item.end}</div>
+                      <div style={{
+                        width: 34, height: 34, borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: isPast ? 'var(--color-surface-3)' : `${item.warna}20`,
+                        fontSize: 16,
+                        opacity: isPast && !isCurrent ? 0.4 : 1,
+                      }}>
+                        {item.icon}
+                      </div>
+                      <div style={{
+                        flex: 1, fontSize: 13, fontWeight: isCurrent ? 700 : 500,
+                        color: isPast && !isCurrent ? 'var(--color-text-muted)' : 'var(--color-text)',
+                        letterSpacing: '0.005em',
+                      }}>{item.label}</div>
+                      {isCurrent && (
+                        <span className="badge badge--orange" style={{ fontSize: 9, padding: '2px 8px' }}>Sekarang</span>
+                      )}
+                      {isPast && !isCurrent && (
+                        <span style={{ color: 'var(--color-success)', fontSize: 14 }}>✓</span>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </motion.div>
@@ -385,7 +488,7 @@ export default function DashboardTab() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="modal-overlay"
-            onClick={(e) => e.target === e.currentTarget && setShowEditModal(false)}
+            onClick={(e) => e.target === e.currentTarget && !showRecForm && setShowEditModal(false)}
             style={{ zIndex: 1100 }}
           >
             <motion.div
@@ -397,17 +500,129 @@ export default function DashboardTab() {
               style={{ overflowY: 'auto', maxHeight: '90dvh', padding: '24px 20px 32px' }}
             >
               <div className="modal-handle" />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <div className="modal-title" style={{ margin: 0 }}>Kelola Jadwal Harian</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div className="modal-title" style={{ margin: 0, fontSize: 16 }}>Kelola Jadwal ({activeDay})</div>
                 <button
                   onClick={resetToDefault}
                   className="btn btn--secondary"
                   style={{ padding: '6px 12px', fontSize: 11, gap: 5 }}
                 >
-                  <RotateCcw size={12} /> Reset
+                  <RotateCcw size={12} /> Reset Hari
                 </button>
               </div>
 
+              {/* Utility Row: Copy to All & Recommend */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                <button
+                  onClick={copyToAllDays}
+                  className="btn btn--secondary"
+                  style={{ padding: '8px 12px', fontSize: 11, gap: 5, flex: 1, transition: 'all 0.15s ease' }}
+                >
+                  <Copy size={12} /> {copySuccess ? 'Tersalin!' : 'Salin ke Semua Hari'}
+                </button>
+                <button
+                  onClick={() => setShowRecForm(!showRecForm)}
+                  className="btn btn--secondary"
+                  style={{ padding: '8px 12px', fontSize: 11, gap: 5, flex: 1, border: '1px solid rgba(255,107,0,0.4)', color: 'var(--color-primary)', transition: 'all 0.15s ease' }}
+                >
+                  <Sparkles size={12} /> {showRecForm ? 'Tutup Rekomendasi' : 'Rekomendasikan'}
+                </button>
+              </div>
+
+              {/* Recommendation Form Drawer */}
+              <AnimatePresence>
+                {showRecForm && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    style={{
+                      background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-lg)', padding: 14, marginBottom: 20,
+                      display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden'
+                    }}
+                  >
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Sparkles size={14} /> Atur Ulang & Buat Rekomendasi Jadwal
+                    </div>
+                    <p style={{ fontSize: 11, color: 'var(--color-text-sub)', lineHeight: 1.4 }}>
+                      Jawab kesibukanmu untuk secara otomatis merancang jadwal latihan, makan, dan tidur ideal untuk 7 hari seminggu.
+                    </p>
+
+                    <div className="input-group">
+                      <label className="input-label" style={{ fontSize: 9 }}>Pekerjaan / Kesibukan Utama</label>
+                      <select
+                        className="input" style={{ padding: '6px 10px', fontSize: 12 }}
+                        value={recPekerjaan}
+                        onChange={e => setRecPekerjaan(e.target.value)}
+                      >
+                        <option value="pelajar">Pelajar Sekolah</option>
+                        <option value="mahasiswa">Mahasiswa Kuliah</option>
+                        <option value="kantoran">Pekerja Kantoran</option>
+                        <option value="freelance">Freelancer / Wirausaha</option>
+                        <option value="irt">Ibu Rumah Tangga / Di Rumah</option>
+                      </select>
+                    </div>
+
+                    {recPekerjaan !== 'irt' && (
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <div className="input-group" style={{ flex: 1 }}>
+                          <label className="input-label" style={{ fontSize: 9 }}>Mulai Sibuk</label>
+                          <input
+                            type="time" className="input" style={{ padding: '6px 8px', fontSize: 12 }}
+                            value={recJamMulai}
+                            onChange={e => setRecJamMulai(e.target.value)}
+                          />
+                        </div>
+                        <div className="input-group" style={{ flex: 1 }}>
+                          <label className="input-label" style={{ fontSize: 9 }}>Selesai Sibuk</label>
+                          <input
+                            type="time" className="input" style={{ padding: '6px 8px', fontSize: 12 }}
+                            value={recJamSelesai}
+                            onChange={e => setRecJamSelesai(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <div className="input-group" style={{ flex: 1 }}>
+                        <label className="input-label" style={{ fontSize: 9 }}>Dari Hari</label>
+                        <select
+                          className="input" style={{ padding: '6px 10px', fontSize: 12 }}
+                          value={recHariMulai}
+                          onChange={e => setRecHariMulai(e.target.value)}
+                        >
+                          {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="input-group" style={{ flex: 1 }}>
+                        <label className="input-label" style={{ fontSize: 9 }}>Sampai Hari</label>
+                        <select
+                          className="input" style={{ padding: '6px 10px', fontSize: 12 }}
+                          value={recHariSelesai}
+                          onChange={e => setRecHariSelesai(e.target.value)}
+                        >
+                          {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <button
+                      className="btn btn--primary btn--full" style={{ padding: '8px', fontSize: 12, marginTop: 4 }}
+                      onClick={applyRecommendation}
+                    >
+                      Terapkan Rekomendasi Jadwal Baru
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Schedule Items List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
                 {tempJadwal.map((item, idx) => (
                   <div key={idx} style={{
