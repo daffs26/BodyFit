@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Timer, ChevronDown, ChevronUp, Dumbbell, Utensils } from 'lucide-react';
+import { Plus, X, Timer, ChevronDown, ChevronUp, Dumbbell, Utensils, Target } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import useStore from '../store/useStore';
+import PlannerTab from './PlannerTab';
 
 const MUSCLE_GROUPS = [
   { id: 'dada',     label: 'Dada' },
@@ -430,10 +431,17 @@ function FoodLogger() {
 export default function LoggerTab() {
   const [activeSubTab, setActiveSubTab] = useState('workout');
 
+  const getHeaderTitle = () => {
+    if (activeSubTab === 'workout') return <>Catat <span>Latihan</span></>;
+    if (activeSubTab === 'food') return <>Catat <span>Nutrisi</span></>;
+    if (activeSubTab === 'planner') return <>Rencana <span>Latihan</span></>;
+    return <>Catat <span>Aktivitas</span></>;
+  };
+
   return (
     <div>
       <div className="page-header">
-        <div className="page-title">Catat <span>Aktivitas</span></div>
+        <div className="page-title">{getHeaderTitle()}</div>
       </div>
 
       {/* Sub-tab toggle */}
@@ -445,18 +453,27 @@ export default function LoggerTab() {
           <button className={`tab-pill ${activeSubTab === 'food' ? 'active' : ''}`} onClick={() => setActiveSubTab('food')}>
             <Utensils size={14} style={{ display: 'inline', marginRight: 4 }} />Nutrisi
           </button>
+          <button className={`tab-pill ${activeSubTab === 'planner' ? 'active' : ''}`} onClick={() => setActiveSubTab('planner')}>
+            <Target size={14} style={{ display: 'inline', marginRight: 4 }} />Rencana
+          </button>
         </div>
       </div>
 
       <AnimatePresence mode="wait">
         <motion.div
           key={activeSubTab}
-          initial={{ opacity: 0, x: activeSubTab === 'workout' ? -20 : 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.18 }}
         >
-          {activeSubTab === 'workout' ? <WorkoutLogger /> : <FoodLogger />}
+          {activeSubTab === 'workout' ? (
+            <WorkoutLogger />
+          ) : activeSubTab === 'food' ? (
+            <FoodLogger />
+          ) : (
+            <PlannerTab />
+          )}
         </motion.div>
       </AnimatePresence>
     </div>

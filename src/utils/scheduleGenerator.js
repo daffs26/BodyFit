@@ -149,3 +149,241 @@ export function generateRecommendedSchedule({ pekerjaan, jamMulai, jamSelesai, h
 
   return scheduleWeekly;
 }
+
+export function integrateProgramIntoExistingJadwal(existingJadwal, programJadwal, waktuLatihanId) {
+  const cloned = JSON.parse(JSON.stringify(existingJadwal));
+  const DAYS_INDONESIAN = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+
+  const workoutTimeMap = {
+    pagi: { start: '06:00', end: '07:30' },
+    siang: { start: '12:00', end: '13:30' },
+    sore: { start: '16:00', end: '17:30' },
+    malam: { start: '19:00', end: '20:30' }
+  };
+  const gymTimes = workoutTimeMap[waktuLatihanId] || { start: '07:00', end: '08:30' };
+
+  DAYS_INDONESIAN.forEach(day => {
+    let dayAgenda = cloned[day] || [];
+    const dayUpper = day.toUpperCase();
+    const programDay = programJadwal.find(p => p.hari === dayUpper) || { aktif: false };
+
+    // 1. Remove any existing workout/gym/latihan items
+    dayAgenda = dayAgenda.filter(item => {
+      const labelLower = item.label.toLowerCase();
+      return !labelLower.includes('gym') && !labelLower.includes('latihan') && item.icon !== '🏋️';
+    });
+
+    if (programDay.aktif) {
+      // 2. Insert the workout item
+      const workoutItem = {
+        start: gymTimes.start,
+        end: gymTimes.end,
+        label: `Latihan: ${programDay.label}`,
+        icon: '🏋️',
+        warna: '#FF6B00'
+      };
+
+      // 3. Insert a post-workout meal item (30 minutes after workout)
+      const postWorkoutItem = {
+        start: gymTimes.end,
+        end: addMinutes(gymTimes.end, 30),
+        label: 'Makanan Pasca-Latihan',
+        icon: '🥗',
+        warna: '#22C55E'
+      };
+
+      // 4. Check for overlaps with other activities (excluding Sleep or Work/Study if they are crucial, but adjust others)
+      const gymStartMin = timeToMin(gymTimes.start);
+      const gymEndMin = timeToMin(gymTimes.end);
+      const mealStartMin = gymEndMin;
+      const mealEndMin = timeToMin(postWorkoutItem.end);
+
+      const isCritical = (label) => {
+        const l = label.toLowerCase();
+        return l.includes('tidur') || l.includes('sekolah') || l.includes('kuliah') || l.includes('bekerja') || l.includes('kantor');
+      };
+
+      let adjustedAgenda = [];
+
+      dayAgenda.forEach(item => {
+        const sMin = timeToMin(item.start);
+        const eMin = timeToMin(item.end);
+
+        // Check if crosses midnight or invalid
+        if (eMin <= sMin) {
+          // Keep critical/overnight items intact (usually sleep)
+          adjustedAgenda.push(item);
+          return;
+        }
+
+        // Check overlap with workout + post-workout combined block [gymStartMin, mealEndMin]
+        const overlapsWorkout = (sMin < gymEndMin && eMin > gymStartMin);
+        const overlapsMeal = (sMin < mealEndMin && eMin > mealStartMin);
+
+        if (overlapsWorkout || overlapsMeal) {
+          if (isCritical(item.label)) {
+            // Keep critical items intact
+            adjustedAgenda.push(item);
+          } else {
+            // Adjust start/end times
+            let newStartMin = sMin;
+            let newEndMin = eMin;
+
+            // If it covers workout start
+            if (sMin < gymStartMin && eMin > gymStartMin) {
+              newEndMin = gymStartMin;
+            }
+            // If it covers meal end
+            if (sMin < mealEndMin && eMin > mealEndMin) {
+              newStartMin = mealEndMin;
+            }
+
+            if (newEndMin > newStartMin) {
+              adjustedAgenda.push({
+                ...item,
+                start: minToTime(newStartMin),
+                end: minToTime(newEndMin)
+              });
+            }
+          }
+        } else {
+          adjustedAgenda.push(item);
+        }
+      });
+
+      // Add workout and post-workout items
+      adjustedAgenda.push(workoutItem);
+      adjustedAgenda.push(postWorkoutItem);
+
+      cloned[day] = adjustedAgenda.sort((a, b) => a.start.localeCompare(b.start));
+    } else {
+      cloned[day] = dayAgenda.sort((a, b) => a.start.localeCompare(b.start));
+    }
+  });
+
+  return cloned;
+}
+
+export function generateRecommendedScheduleWithProgram({
+  pekerjaan,
+  jamMulai,
+  jamSelesai,
+  hariMulai,
+  hariSelesai,
+  targetTidur = 7.5,
+  programJadwal,
+  waktuLatihanId
+}) {
+  // 1. Generate the base schedule using the existing function
+  const baseSchedule = generateRecommendedSchedule({
+    pekerjaan,
+    jamMulai,
+    jamSelesai,
+    hariMulai,
+    hariSelesai,
+    targetTidur
+  });
+
+  const cloned = {};
+  const DAYS_INDONESIAN = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+
+  const workoutTimeMap = {
+    pagi: { start: '06:00', end: '07:30' },
+    siang: { start: '12:00', end: '13:30' },
+    sore: { start: '16:00', end: '17:30' },
+    malam: { start: '19:00', end: '20:30' }
+  };
+  const gymTimes = workoutTimeMap[waktuLatihanId] || { start: '07:00', end: '08:30' };
+
+  DAYS_INDONESIAN.forEach(day => {
+    let agenda = baseSchedule[day] || [];
+    const dayUpper = day.toUpperCase();
+    const programDay = programJadwal.find(p => p.hari === dayUpper) || { aktif: false };
+
+    // Remove any default gym/latihan/pasca-latihan items
+    agenda = agenda.filter(item => {
+      const l = item.label.toLowerCase();
+      return !l.includes('gym') && !l.includes('latihan') && !l.includes('pasca-latihan');
+    });
+
+    if (programDay.aktif) {
+      // Create workout and post-workout items
+      const workoutItem = {
+        start: gymTimes.start,
+        end: gymTimes.end,
+        label: `Latihan: ${programDay.label}`,
+        icon: '🏋️',
+        warna: '#FF6B00'
+      };
+      const postWorkoutItem = {
+        start: gymTimes.end,
+        end: addMinutes(gymTimes.end, 30),
+        label: 'Makanan Pasca-Latihan',
+        icon: '🥗',
+        warna: '#22C55E'
+      };
+
+      // Resolve overlaps
+      const gymStartMin = timeToMin(gymTimes.start);
+      const gymEndMin = timeToMin(gymTimes.end);
+      const mealStartMin = gymEndMin;
+      const mealEndMin = timeToMin(postWorkoutItem.end);
+
+      const isCritical = (label) => {
+        const l = label.toLowerCase();
+        return l.includes('tidur') || l.includes('sekolah') || l.includes('kuliah') || l.includes('bekerja') || l.includes('kantor');
+      };
+
+      let adjustedAgenda = [];
+
+      agenda.forEach(item => {
+        const sMin = timeToMin(item.start);
+        const eMin = timeToMin(item.end);
+
+        if (eMin <= sMin) {
+          // overnight items
+          adjustedAgenda.push(item);
+          return;
+        }
+
+        const overlapsWorkout = (sMin < gymEndMin && eMin > gymStartMin);
+        const overlapsMeal = (sMin < mealEndMin && eMin > mealStartMin);
+
+        if (overlapsWorkout || overlapsMeal) {
+          if (isCritical(item.label)) {
+            adjustedAgenda.push(item);
+          } else {
+            let newStartMin = sMin;
+            let newEndMin = eMin;
+
+            if (sMin < gymStartMin && eMin > gymStartMin) {
+              newEndMin = gymStartMin;
+            }
+            if (sMin < mealEndMin && eMin > mealEndMin) {
+              newStartMin = mealEndMin;
+            }
+
+            if (newEndMin > newStartMin) {
+              adjustedAgenda.push({
+                ...item,
+                start: minToTime(newStartMin),
+                end: minToTime(newEndMin)
+              });
+            }
+          }
+        } else {
+          adjustedAgenda.push(item);
+        }
+      });
+
+      adjustedAgenda.push(workoutItem);
+      adjustedAgenda.push(postWorkoutItem);
+
+      cloned[day] = adjustedAgenda.sort((a, b) => a.start.localeCompare(b.start));
+    } else {
+      cloned[day] = agenda.sort((a, b) => a.start.localeCompare(b.start));
+    }
+  });
+
+  return cloned;
+}

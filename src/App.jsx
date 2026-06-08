@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Dumbbell, BarChart2, BookOpen, User, Home, Target } from 'lucide-react';
+import { Dumbbell, BarChart2, BookOpen, User, Home } from 'lucide-react';
 import useStore from './store/useStore';
 
 // Tabs
@@ -8,7 +8,6 @@ import DashboardTab from './components/DashboardTab';
 import LoggerTab from './components/LoggerTab';
 import AnalyticsTab from './components/AnalyticsTab';
 import LibraryTab from './components/LibraryTab';
-import PlannerTab from './components/PlannerTab';
 import ProfileTab from './components/ProfileTab';
 import OnboardingScreen from './components/OnboardingScreen';
 
@@ -16,7 +15,6 @@ const TABS = [
   { id: 'dashboard', label: 'Dasbor',   icon: Home,     component: DashboardTab },
   { id: 'logger',    label: 'Latihan',  icon: Dumbbell, component: LoggerTab    },
   { id: 'analytics', label: 'Analisis', icon: BarChart2, component: AnalyticsTab },
-  { id: 'planner',   label: 'Rencana',  icon: Target,   component: PlannerTab   },
   { id: 'library',   label: 'Kamus',    icon: BookOpen, component: LibraryTab   },
   { id: 'profile',   label: 'Profil',   icon: User,     component: ProfileTab   },
 ];

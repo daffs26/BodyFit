@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ChevronRight, Dumbbell, Clock, Sun, Sunset, Moon, Zap, Info, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Dumbbell, Clock, Sun, Sunset, Moon, Zap, Info, CheckCircle2, Calendar, Sparkles, Check, X } from 'lucide-react';
+import useStore from '../store/useStore';
+import { integrateProgramIntoExistingJadwal, generateRecommendedScheduleWithProgram } from '../utils/scheduleGenerator';
 
 // ── Konstanta ─────────────────────────────────────────────────────────────────
 
@@ -260,9 +262,52 @@ function JadwalRow({ item }) {
 export default function ProgramRekomendasiPage({ tingkat, onBack }) {
   const meta = TINGKAT_META[tingkat] || TINGKAT_META['sedang'];
 
+  const { jadwalHarian, setJadwalHarian, profil } = useStore();
+
   const [step, setStep] = useState(1); // 1 = fokus, 2 = waktu, 3 = hasil
   const [fokus, setFokus] = useState([]);
   const [waktu, setWaktu] = useState('');
+
+  const [showTerapkanModal, setShowTerapkanModal] = useState(false);
+  const [showSuccessAnim, setShowSuccessAnim] = useState(false);
+  const [showFullRecForm, setShowFullRecForm] = useState(false);
+
+  const [recPekerjaan, setRecPekerjaan] = useState('kantoran');
+  const [recJamMulai, setRecJamMulai] = useState('08:00');
+  const [recJamSelesai, setRecJamSelesai] = useState('17:00');
+  const [recHariMulai, setRecHariMulai] = useState('Senin');
+  const [recHariSelesai, setRecHariSelesai] = useState('Jumat');
+
+  const handleIntegrateOnly = () => {
+    const newJadwal = integrateProgramIntoExistingJadwal(jadwalHarian, jadwal, waktu);
+    setJadwalHarian(newJadwal);
+    setShowTerapkanModal(false);
+    setShowSuccessAnim(true);
+    setTimeout(() => {
+      setShowSuccessAnim(false);
+      onBack();
+    }, 2500);
+  };
+
+  const handleApplyFullLifestyle = () => {
+    const newJadwal = generateRecommendedScheduleWithProgram({
+      pekerjaan: recPekerjaan,
+      jamMulai: recJamMulai,
+      jamSelesai: recJamSelesai,
+      hariMulai: recHariMulai,
+      hariSelesai: recHariSelesai,
+      targetTidur: profil.targetTidur || 7.5,
+      programJadwal: jadwal,
+      waktuLatihanId: waktu
+    });
+    setJadwalHarian(newJadwal);
+    setShowTerapkanModal(false);
+    setShowSuccessAnim(true);
+    setTimeout(() => {
+      setShowSuccessAnim(false);
+      onBack();
+    }, 2500);
+  };
 
   const toggleFokus = (id) => {
     setFokus(prev =>
@@ -608,6 +653,20 @@ export default function ProgramRekomendasiPage({ tingkat, onBack }) {
                 ))}
               </div>
 
+              {/* Terapkan ke Jadwal Harian */}
+              <button
+                onClick={() => {
+                  // Populate default values from profil
+                  setRecPekerjaan(profil.tingkatAktivitas === 'sedentary' ? 'irt' : 'kantoran');
+                  setShowTerapkanModal(true);
+                }}
+                className="btn btn--primary btn--full btn--lg"
+                style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              >
+                <Calendar size={18} />
+                Terapkan ke Jadwal Harian
+              </button>
+
               {/* Ubah preferensi */}
               <button
                 onClick={() => { setStep(1); setFokus([]); setWaktu(''); }}
@@ -624,6 +683,263 @@ export default function ProgramRekomendasiPage({ tingkat, onBack }) {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Modal Terapkan Jadwal */}
+      <AnimatePresence>
+        {showTerapkanModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="modal-overlay"
+            onClick={(e) => e.target === e.currentTarget && setShowTerapkanModal(false)}
+            style={{ zIndex: 1200 }}
+          >
+            <motion.div
+              initial={{ y: 300, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 300, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className="modal-sheet"
+              style={{ overflowY: 'auto', maxHeight: '90dvh', padding: '24px 20px 32px' }}
+            >
+              <div className="modal-handle" />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div className="modal-title" style={{ margin: 0, fontSize: 16 }}>Integrasi Jadwal Latihan</div>
+                <button
+                  onClick={() => setShowTerapkanModal(false)}
+                  style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <p style={{ fontSize: 13, color: 'var(--color-text-sub)', lineHeight: 1.5, marginBottom: 20, textAlign: 'left' }}>
+                Bagaimana Anda ingin mengintegrasikan program latihan ini ke dalam jadwal mingguan Anda?
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+                {/* Opsi 1: Integrasi Sederhana */}
+                <button
+                  onClick={handleIntegrateOnly}
+                  style={{
+                    padding: '16px',
+                    borderRadius: 'var(--radius-xl)',
+                    border: '1px solid var(--color-border)',
+                    background: 'var(--color-surface)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    display: 'flex',
+                    gap: 12,
+                    transition: 'all 0.18s',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--color-border)'}
+                >
+                  <div style={{
+                    width: 38, height: 38, borderRadius: 10,
+                    background: 'var(--color-success-pale)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                  }}>
+                    <Zap size={18} color="var(--color-success)" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', marginBottom: 4 }}>
+                      Integrasikan dengan Jadwal Aktif
+                    </div>
+                    <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', lineHeight: 1.4 }}>
+                      Hanya menyisipkan sesi latihan program baru di waktu terpilih ({WAKTU_LATIHAN.find(w => w.id === waktu)?.jam}) tanpa mengubah kegiatan lainnya.
+                    </div>
+                  </div>
+                </button>
+
+                {/* Opsi 2: Buat Jadwal Lengkap */}
+                <button
+                  onClick={() => setShowFullRecForm(!showFullRecForm)}
+                  style={{
+                    padding: '16px',
+                    borderRadius: 'var(--radius-xl)',
+                    border: `1px solid ${showFullRecForm ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                    background: showFullRecForm ? 'var(--color-primary-pale)' : 'var(--color-surface)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    display: 'flex',
+                    gap: 12,
+                    transition: 'all 0.18s',
+                  }}
+                >
+                  <div style={{
+                    width: 38, height: 38, borderRadius: 10,
+                    background: 'var(--color-primary-pale)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                  }}>
+                    <Sparkles size={18} color="var(--color-primary)" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: showFullRecForm ? 'var(--color-primary)' : 'var(--color-text)', marginBottom: 4 }}>
+                      Buat Jadwal Rutinitas Lengkap (Rekomendasi)
+                    </div>
+                    <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', lineHeight: 1.4 }}>
+                      Menyusun ulang seluruh rutinitas mingguan Anda (makan, tidur, sekolah/kerja) agar terintegrasi sempurna dengan hari latihan aktif.
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              {/* Form questionnaire for Opsi 2 */}
+              <AnimatePresence>
+                {showFullRecForm && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    style={{
+                      background: 'var(--color-surface-2)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-lg)',
+                      padding: 14,
+                      marginBottom: 20,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                      overflow: 'hidden',
+                      textAlign: 'left'
+                    }}
+                  >
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Sparkles size={14} /> Atur Kesibukan Anda
+                    </div>
+
+                    <div className="input-group">
+                      <label className="input-label" style={{ fontSize: 9 }}>Pekerjaan / Kesibukan Utama</label>
+                      <select
+                        className="input" style={{ padding: '6px 10px', fontSize: 12 }}
+                        value={recPekerjaan}
+                        onChange={e => setRecPekerjaan(e.target.value)}
+                      >
+                        <option value="pelajar">Pelajar Sekolah</option>
+                        <option value="mahasiswa">Mahasiswa Kuliah</option>
+                        <option value="kantoran">Pekerja Kantoran</option>
+                        <option value="freelance">Freelancer / Wirausaha</option>
+                        <option value="irt">Ibu Rumah Tangga / Di Rumah</option>
+                      </select>
+                    </div>
+
+                    {recPekerjaan !== 'irt' && (
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <div className="input-group" style={{ flex: 1 }}>
+                          <label className="input-label" style={{ fontSize: 9 }}>Mulai Sibuk</label>
+                          <input
+                            type="time" className="input" style={{ padding: '6px 8px', fontSize: 12 }}
+                            value={recJamMulai}
+                            onChange={e => setRecJamMulai(e.target.value)}
+                          />
+                        </div>
+                        <div className="input-group" style={{ flex: 1 }}>
+                          <label className="input-label" style={{ fontSize: 9 }}>Selesai Sibuk</label>
+                          <input
+                            type="time" className="input" style={{ padding: '6px 8px', fontSize: 12 }}
+                            value={recJamSelesai}
+                            onChange={e => setRecJamSelesai(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <div className="input-group" style={{ flex: 1 }}>
+                        <label className="input-label" style={{ fontSize: 9 }}>Dari Hari</label>
+                        <select
+                          className="input" style={{ padding: '6px 10px', fontSize: 12 }}
+                          value={recHariMulai}
+                          onChange={e => setRecHariMulai(e.target.value)}
+                        >
+                          {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="input-group" style={{ flex: 1 }}>
+                        <label className="input-label" style={{ fontSize: 9 }}>Sampai Hari</label>
+                        <select
+                          className="input" style={{ padding: '6px 10px', fontSize: 12 }}
+                          value={recHariSelesai}
+                          onChange={e => setRecHariSelesai(e.target.value)}
+                        >
+                          {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <button
+                      className="btn btn--primary btn--full"
+                      style={{ padding: '8px', fontSize: 12, marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                      onClick={handleApplyFullLifestyle}
+                    >
+                      <Check size={14} /> Terapkan Jadwal Lengkap Baru
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <button
+                className="btn btn--secondary btn--full"
+                onClick={() => setShowTerapkanModal(false)}
+              >
+                Batal
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Overlay Animasi Sukses */}
+      <AnimatePresence>
+        {showSuccessAnim && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1500,
+              background: 'rgba(0,0,0,0.85)',
+              backdropFilter: 'blur(8px)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 16
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.5, rotate: -45, opacity: 0 }}
+              animate={{ scale: 1.1, rotate: 5, opacity: 1 }}
+              transition={{ type: 'spring', delay: 0.1, damping: 10, stiffness: 100 }}
+              style={{
+                width: 80, height: 80, borderRadius: '50%',
+                background: 'var(--color-primary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 30px rgba(255,107,0,0.6)'
+              }}
+            >
+              <Check size={44} color="white" strokeWidth={3} />
+            </motion.div>
+            
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              style={{ textAlign: 'center', padding: '0 24px' }}
+            >
+              <div style={{ fontSize: 20, fontWeight: 800, color: 'white', marginBottom: 6 }}>
+                Jadwal Berhasil Diterapkan!
+              </div>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+                Program latihan mingguan Anda sekarang telah terintegrasi dengan Jadwal Harian di Dasbor.
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

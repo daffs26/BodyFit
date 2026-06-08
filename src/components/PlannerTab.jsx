@@ -91,9 +91,6 @@ export default function PlannerTab() {
       </AnimatePresence>
 
       <div>
-        <div className="page-header">
-          <div className="page-title">Rencana <span>Latihan</span></div>
-        </div>
 
         <div style={{ padding: 'var(--space-4) var(--space-5)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
