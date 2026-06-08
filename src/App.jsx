@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Dumbbell, BarChart2, BookOpen, User, Home, Target } from 'lucide-react';
 import useStore from './store/useStore';
@@ -12,12 +12,12 @@ import PlannerTab from './components/PlannerTab';
 import ProfileTab from './components/ProfileTab';
 
 const TABS = [
-  { id: 'dashboard', label: 'Home',     icon: Home,     component: DashboardTab },
-  { id: 'logger',    label: 'Log',      icon: Dumbbell, component: LoggerTab    },
-  { id: 'analytics', label: 'Progress', icon: BarChart2, component: AnalyticsTab },
-  { id: 'planner',   label: 'Plan',     icon: Target,   component: PlannerTab   },
-  { id: 'library',   label: 'Library',  icon: BookOpen, component: LibraryTab   },
-  { id: 'profile',   label: 'Profile',  icon: User,     component: ProfileTab   },
+  { id: 'dashboard', label: 'Dasbor',   icon: Home,     component: DashboardTab },
+  { id: 'logger',    label: 'Latihan',  icon: Dumbbell, component: LoggerTab    },
+  { id: 'analytics', label: 'Analisis', icon: BarChart2, component: AnalyticsTab },
+  { id: 'planner',   label: 'Rencana',  icon: Target,   component: PlannerTab   },
+  { id: 'library',   label: 'Kamus',    icon: BookOpen, component: LibraryTab   },
+  { id: 'profile',   label: 'Profil',   icon: User,     component: ProfileTab   },
 ];
 
 const pageVariants = {
@@ -27,8 +27,13 @@ const pageVariants = {
 };
 
 export default function App() {
-  const { activeTab, setActiveTab } = useStore();
-  const ActiveComponent = TABS.find(t => t.id === activeTab)?.component || DashboardTab;
+  const { tabAktif, setTabAktif, tema } = useStore();
+  
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', tema || 'dark');
+  }, [tema]);
+
+  const ActiveComponent = TABS.find(t => t.id === tabAktif)?.component || DashboardTab;
 
   return (
     <div className="app-wrapper">
@@ -36,7 +41,7 @@ export default function App() {
       <main className="app-content">
         <AnimatePresence mode="wait">
           <motion.div
-            key={activeTab}
+            key={tabAktif}
             variants={pageVariants}
             initial="initial"
             animate="animate"
@@ -49,20 +54,23 @@ export default function App() {
 
       {/* ---- Bottom Navigation ---- */}
       <nav className="bottom-nav">
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            className={`bottom-nav__item ${activeTab === id ? 'active' : ''}`}
-            onClick={() => setActiveTab(id)}
-            aria-label={label}
-          >
-            <span className="bottom-nav__icon">
-              <Icon size={20} strokeWidth={activeTab === id ? 2.5 : 1.8} />
-            </span>
-            <span className="bottom-nav__label">{label}</span>
-          </button>
-        ))}
+        {TABS.map(({ id, label, icon: Icon }) => {
+          return (
+            <button
+              key={id}
+              className={`bottom-nav__item ${tabAktif === id ? 'active' : ''}`}
+              onClick={() => setTabAktif(id)}
+              aria-label={label}
+            >
+              <span className="bottom-nav__icon">
+                <Icon size={20} strokeWidth={tabAktif === id ? 2.5 : 1.8} />
+              </span>
+              <span className="bottom-nav__label">{label}</span>
+            </button>
+          );
+        })}
       </nav>
     </div>
   );
 }
+

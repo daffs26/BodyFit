@@ -3,7 +3,7 @@
    Black × White × Orange — Athletic Premium
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   /* ---- Core Colors ---- */
@@ -47,7 +47,7 @@
   --color-core:          #EF4444;
 
   /* ---- Typography ---- */
-  --font-family:     'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-family:     'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-size-xs:    0.75rem;
   --font-size-sm:    0.875rem;
   --font-size-base:  1rem;
@@ -61,7 +61,7 @@
   --font-weight-normal:   400;
   --font-weight-medium:   500;
   --font-weight-semibold: 600;
-  --font-weight-bold:     700;
+  --font-weight-bold:     600;
   --font-weight-extrabold: 800;
 
   --line-height-tight:   1.25;
@@ -116,3 +116,46 @@
   --bottom-nav-h:   72px;
   --safe-bottom:    env(safe-area-inset-bottom, 0px);
 }
+
+[data-theme='light'] {
+  /* ---- Core Colors ---- */
+  --color-bg:            #F4F4F5;
+  --color-bg-2:          #E4E4E7;
+  --color-surface:       #FFFFFF;
+  --color-surface-2:     #F4F4F5;
+  --color-surface-3:     #E4E4E7;
+  --color-border:        #E4E4E7;
+  --color-border-light:  #D4D4D8;
+
+  /* ---- Text ---- */
+  --color-text:          #09090B;
+  --color-text-sub:      #71717A;
+  --color-text-muted:    #A1A1AA;
+  --color-text-inverse:  #FFFFFF;
+
+  /* ---- Accent: Orange ---- */
+  --color-primary:       #FF6B00;
+  --color-primary-dark:  #E05C00;
+  --color-primary-light: #FF8C33;
+  --color-primary-pale:  rgba(255, 107, 0, 0.08);
+  --color-primary-glow:  rgba(255, 107, 0, 0.15);
+
+  /* ---- Semantic Colors ---- */
+  --color-success:       #16A34A;
+  --color-success-pale:  rgba(22, 163, 74, 0.08);
+  --color-warning:       #D97706;
+  --color-warning-pale:  rgba(217, 119, 6, 0.08);
+  --color-danger:        #DC2626;
+  --color-danger-pale:   rgba(220, 38, 38, 0.08);
+  --color-info:          #2563EB;
+  --color-info-pale:     rgba(37, 99, 235, 0.08);
+
+  /* ---- Shadows ---- */
+  --shadow-xs:     0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm:     0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-md:     0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg:     0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-primary: 0 4px 20px rgba(255, 107, 0, 0.25);
+  --shadow-glow:    0 0 24px rgba(255, 107, 0, 0.1);
+}
+

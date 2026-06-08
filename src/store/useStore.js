@@ -4,101 +4,109 @@ import { persist } from 'zustand/middleware';
 const useStore = create(
   persist(
     (set, get) => ({
-      // ---- Active Tab ----
-      activeTab: 'dashboard',
-      setActiveTab: (tab) => set({ activeTab: tab }),
+      // ---- Tab Aktif ----
+      tabAktif: 'dashboard',
+      setTabAktif: (tab) => set({ tabAktif: tab }),
 
-      // ---- User Profile & Goals ----
-      profile: {
-        name: '',
-        gender: 'male',
-        age: 25,
-        height: 170,   // cm
-        weight: 70,    // kg
-        activityLevel: 'moderate', // sedentary, light, moderate, active, very_active
-        goalType: 'cutting',       // bulking, cutting, maintain
-        targetWeight: 65,
-        workoutsPerWeek: 4,
-        sleepTarget: 7.5,          // jam
-        waterTarget: 2500,         // ml
+      // ---- Profil & Target Pengguna ----
+      profil: {
+        nama: '',
+        gender: 'pria', // pria, wanita
+        usia: 25,
+        tinggi: 170,   // cm
+        berat: 70,    // kg
+        tingkatAktivitas: 'sedang', // sedentary, ringan, sedang, aktif, sangat_aktif
+        tipeTarget: 'defisit',       // surplus, defisit, pemeliharaan
+        beratTarget: 65,
+        latihanPerMinggu: 4,
+        targetTidur: 7.5,          // jam
+        targetAir: 2500,         // ml
       },
-      setProfile: (updates) => set((state) => ({
-        profile: { ...state.profile, ...updates }
+      setProfil: (updates) => set((state) => ({
+        profil: { ...state.profil, ...updates }
       })),
 
-      // ---- TDEE & Macros (computed from profile) ----
-      getTDEE: () => {
-        const { gender, age, height, weight, activityLevel, goalType } = get().profile;
+      // ---- TDEE & Makro (dihitung dari profil) ----
+      hitungTDEE: () => {
+        const { gender, usia, tinggi, berat, tingkatAktivitas, tipeTarget } = get().profil;
         // Mifflin-St Jeor BMR
-        let bmr = gender === 'male'
-          ? 10 * weight + 6.25 * height - 5 * age + 5
-          : 10 * weight + 6.25 * height - 5 * age - 161;
+        let bmr = gender === 'pria'
+          ? 10 * berat + 6.25 * tinggi - 5 * usia + 5
+          : 10 * berat + 6.25 * tinggi - 5 * usia - 161;
 
-        const activityMultipliers = {
-          sedentary: 1.2, light: 1.375, moderate: 1.55,
-          active: 1.725, very_active: 1.9,
+        const pengaliAktivitas = {
+          sedentary: 1.2,
+          ringan: 1.375,
+          sedang: 1.55,
+          aktif: 1.725,
+          sangat_aktif: 1.9,
         };
-        const tdee = bmr * (activityMultipliers[activityLevel] || 1.55);
+        const tdee = bmr * (pengaliAktivitas[tingkatAktivitas] || 1.55);
 
-        let targetCalories = tdee;
-        if (goalType === 'bulking')  targetCalories = tdee + 400;
-        if (goalType === 'cutting')  targetCalories = tdee - 400;
+        let kaloriTarget = tdee;
+        if (tipeTarget === 'surplus')      kaloriTarget = tdee + 400;
+        if (tipeTarget === 'defisit')      kaloriTarget = tdee - 400;
 
-        const protein = Math.round(weight * (goalType === 'cutting' ? 2.2 : 2.0));
-        const fat     = Math.round((targetCalories * 0.25) / 9);
-        const carbs   = Math.round((targetCalories - protein * 4 - fat * 9) / 4);
+        const protein = Math.round(berat * (tipeTarget === 'defisit' ? 2.2 : 2.0));
+        const lemak   = Math.round((kaloriTarget * 0.25) / 9);
+        const karbohidrat = Math.round((kaloriTarget - protein * 4 - lemak * 9) / 4);
 
         return {
-          bmr:      Math.round(bmr),
-          tdee:     Math.round(tdee),
-          calories: Math.round(targetCalories),
+          bmr: Math.round(bmr),
+          tdee: Math.round(tdee),
+          kalori: Math.round(kaloriTarget),
           protein,
-          fat,
-          carbs,
+          lemak,
+          karbohidrat,
         };
       },
 
-      // ---- Rest Timer ----
-      restTimer: {
-        isActive: false,
-        duration: 90,  // detik
-        remaining: 90,
-        intervalId: null,
+      // ---- Timer Istirahat ----
+      timerIstirahat: {
+        aktif: false,
+        durasi: 90,  // detik
+        sisa: 90,
+        idInterval: null,
       },
-      startRestTimer: (duration = 90) => {
-        const { restTimer } = get();
-        if (restTimer.intervalId) clearInterval(restTimer.intervalId);
+      mulaiTimerIstirahat: (durasi = 90) => {
+        const { timerIstirahat } = get();
+        if (timerIstirahat.idInterval) clearInterval(timerIstirahat.idInterval);
 
-        set({ restTimer: { isActive: true, duration, remaining: duration, intervalId: null } });
+        set({ timerIstirahat: { aktif: true, durasi, sisa: durasi, idInterval: null } });
 
         const id = setInterval(() => {
-          const current = get().restTimer.remaining;
-          if (current <= 1) {
+          const sisaSekarang = get().timerIstirahat.sisa;
+          if (sisaSekarang <= 1) {
             clearInterval(id);
-            set({ restTimer: { ...get().restTimer, isActive: false, remaining: 0, intervalId: null } });
+            set({ timerIstirahat: { ...get().timerIstirahat, aktif: false, sisa: 0, idInterval: null } });
           } else {
-            set({ restTimer: { ...get().restTimer, remaining: current - 1 } });
+            set({ timerIstirahat: { ...get().timerIstirahat, sisa: sisaSekarang - 1 } });
           }
         }, 1000);
 
-        set({ restTimer: { ...get().restTimer, intervalId: id } });
+        set({ timerIstirahat: { ...get().timerIstirahat, idInterval: id } });
       },
-      stopRestTimer: () => {
-        const { restTimer } = get();
-        if (restTimer.intervalId) clearInterval(restTimer.intervalId);
-        set({ restTimer: { ...get().restTimer, isActive: false, remaining: 0, intervalId: null } });
+      hentikanTimerIstirahat: () => {
+        const { timerIstirahat } = get();
+        if (timerIstirahat.idInterval) clearInterval(timerIstirahat.idInterval);
+        set({ timerIstirahat: { ...get().timerIstirahat, aktif: false, sisa: 0, idInterval: null } });
       },
 
-      // ---- Active Workout Session ----
-      activeWorkout: null,
-      setActiveWorkout: (workout) => set({ activeWorkout: workout }),
-      clearActiveWorkout: () => set({ activeWorkout: null }),
+      // ---- Sesi Latihan Aktif ----
+      latihanAktif: null,
+      setLatihanAktif: (latihan) => set({ latihanAktif: latihan }),
+      bersihkanLatihanAktif: () => set({ latihanAktif: null }),
+
+      // ---- Preferensi Tema ----
+      tema: 'dark',  // 'dark' | 'light'
+      setTema: (tema) => set({ tema: tema }),
     }),
     {
       name: 'bodyfit-store',
       partialize: (state) => ({
-        profile: state.profile,
-        activeTab: state.activeTab,
+        profil: state.profil,
+        tabAktif: state.tabAktif,
+        tema: state.tema,
       }),
     }
   )
