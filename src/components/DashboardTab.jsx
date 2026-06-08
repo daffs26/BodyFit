@@ -79,7 +79,7 @@ function MacroRing({ label, current, target, color }) {
 export default function DashboardTab() {
   const { profil, hitungTDEE, setTabAktif, jadwalHarian, setJadwalHarian } = useStore();
   const [showEditModal, setShowEditModal] = useState(false);
-  const [tempJadwal, setTempJadwal] = useState([]);
+  const [tempJadwal, setTempJadwal] = useState({});
 
   const [activeDay, setActiveDay] = useState(() => {
     return new Date().toLocaleDateString('id-ID', { weekday: 'long' });
@@ -104,28 +104,47 @@ export default function DashboardTab() {
   const currentDayJadwal = getJadwalForDay(jadwalHarian, activeDay);
 
   const openEditModal = () => {
-    setTempJadwal([...currentDayJadwal]);
+    let initialJadwal = {};
+    if (Array.isArray(jadwalHarian)) {
+      const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+      days.forEach(d => {
+        initialJadwal[d] = [...jadwalHarian];
+      });
+    } else {
+      initialJadwal = JSON.parse(JSON.stringify(jadwalHarian || {}));
+    }
+    setTempJadwal(initialJadwal);
     setShowEditModal(true);
     setShowRecForm(false);
   };
 
   const updateTempItem = (index, updates) => {
     setTempJadwal(prev => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], ...updates };
+      const copy = { ...prev };
+      const dayList = [...(copy[activeDay] || [])];
+      dayList[index] = { ...dayList[index], ...updates };
+      copy[activeDay] = dayList;
       return copy;
     });
   };
 
   const deleteTempItem = (index) => {
-    setTempJadwal(prev => prev.filter((_, idx) => idx !== index));
+    setTempJadwal(prev => {
+      const copy = { ...prev };
+      copy[activeDay] = (copy[activeDay] || []).filter((_, idx) => idx !== index);
+      return copy;
+    });
   };
 
   const addTempItem = () => {
-    setTempJadwal(prev => [
-      ...prev,
-      { start: '12:00', end: '13:00', label: 'Kegiatan Baru', icon: '📝', warna: '#3B82F6' }
-    ]);
+    setTempJadwal(prev => {
+      const copy = { ...prev };
+      copy[activeDay] = [
+        ...(copy[activeDay] || []),
+        { start: '12:00', end: '13:00', label: 'Kegiatan Baru', icon: '📝', warna: '#3B82F6' }
+      ];
+      return copy;
+    });
   };
 
   const resetToDefault = () => {
@@ -139,35 +158,34 @@ export default function DashboardTab() {
       { start: '18:30', end: '19:30', label: 'Makan Malam',           icon: '🍽️', warna: '#22C55E' },
       { start: '22:00', end: '05:30', label: 'Tidur',                 icon: '🌙', warna: '#3B82F6' },
     ];
-    setTempJadwal(defaultJadwal);
+    setTempJadwal(prev => ({
+      ...prev,
+      [activeDay]: defaultJadwal
+    }));
   };
 
   const saveJadwal = () => {
-    const sorted = [...tempJadwal].sort((a, b) => a.start.localeCompare(b.start));
-    if (Array.isArray(jadwalHarian)) {
-      const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-      const newJadwal = {};
-      days.forEach(d => {
-        newJadwal[d] = d === activeDay ? sorted : [...jadwalHarian];
-      });
-      setJadwalHarian(newJadwal);
-    } else {
-      setJadwalHarian({
-        ...jadwalHarian,
-        [activeDay]: sorted
-      });
-    }
+    const finalized = {};
+    const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    days.forEach(d => {
+      const dayList = tempJadwal[d] || [];
+      finalized[d] = [...dayList].sort((a, b) => a.start.localeCompare(b.start));
+    });
+    setJadwalHarian(finalized);
     setShowEditModal(false);
   };
 
   const copyToAllDays = () => {
-    const sorted = [...tempJadwal].sort((a, b) => a.start.localeCompare(b.start));
+    const activeList = tempJadwal[activeDay] || [];
+    const sorted = [...activeList].sort((a, b) => a.start.localeCompare(b.start));
     const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-    const newJadwal = {};
-    days.forEach(d => {
-      newJadwal[d] = [...sorted];
+    setTempJadwal(prev => {
+      const copy = { ...prev };
+      days.forEach(d => {
+        copy[d] = JSON.parse(JSON.stringify(sorted));
+      });
+      return copy;
     });
-    setJadwalHarian(newJadwal);
     setCopySuccess(true);
     setTimeout(() => {
       setCopySuccess(false);
@@ -183,8 +201,7 @@ export default function DashboardTab() {
       hariSelesai: recHariSelesai,
       targetTidur: profil.targetTidur || 7.5,
     });
-    setJadwalHarian(recommended);
-    setTempJadwal(recommended[activeDay] || []);
+    setTempJadwal(recommended);
     setShowRecForm(false);
   };
 
@@ -622,80 +639,113 @@ export default function DashboardTab() {
                 )}
               </AnimatePresence>
 
+              {/* Day Selector inside Modal */}
+              <div style={{
+                display: 'flex', gap: 6, overflowX: 'auto',
+                paddingBottom: 12, marginBottom: 16, borderBottom: '1px solid var(--color-border)',
+                scrollbarWidth: 'none', msOverflowStyle: 'none'
+              }}>
+                {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map(day => {
+                  const isSelected = activeDay === day;
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => setActiveDay(day)}
+                      style={{
+                        padding: '6px 10px', borderRadius: 16, fontSize: 10, fontWeight: 700,
+                        border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+                        background: isSelected ? 'var(--color-primary-pale)' : 'var(--color-surface-3)',
+                        color: isSelected ? 'var(--color-primary)' : 'var(--color-text-sub)',
+                        cursor: 'pointer', flexShrink: 0,
+                        transition: 'all 0.12s ease'
+                      }}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+
               {/* Schedule Items List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-                {tempJadwal.map((item, idx) => (
-                  <div key={idx} style={{
-                    display: 'flex', flexDirection: 'column', gap: 8,
-                    padding: 12, borderRadius: 'var(--radius-lg)',
-                    background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
-                  }}>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <div className="input-group" style={{ flex: 1 }}>
-                        <label className="input-label" style={{ fontSize: 9 }}>Mulai</label>
-                        <input
-                          type="time" className="input" style={{ padding: '6px 8px', fontSize: 12 }}
-                          value={item.start}
-                          onChange={e => updateTempItem(idx, { start: e.target.value })}
-                        />
-                      </div>
-                      <div className="input-group" style={{ flex: 1 }}>
-                        <label className="input-label" style={{ fontSize: 9 }}>Selesai</label>
-                        <input
-                          type="time" className="input" style={{ padding: '6px 8px', fontSize: 12 }}
-                          value={item.end}
-                          onChange={e => updateTempItem(idx, { end: e.target.value })}
-                        />
-                      </div>
-                      <div className="input-group" style={{ width: 52 }}>
-                        <label className="input-label" style={{ fontSize: 9 }}>Ikon</label>
-                        <select
-                          className="input" style={{ padding: '5px', fontSize: 14 }}
-                          value={item.icon}
-                          onChange={e => updateTempItem(idx, { icon: e.target.value })}
-                        >
-                          {['⏰', '🍳', '🏋️', '🥗', '🍱', '🍎', '🍽️', '🌙', '🏃', '💧', '💊', '📝', '🔥'].map(em => (
-                            <option key={em} value={em}>{em}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="input-group" style={{ width: 72 }}>
-                        <label className="input-label" style={{ fontSize: 9 }}>Warna</label>
-                        <select
-                          className="input" style={{ padding: '5px', fontSize: 11 }}
-                          value={item.warna}
-                          onChange={e => updateTempItem(idx, { warna: e.target.value })}
-                        >
-                          <option value="#FF6B00">Jingga</option>
-                          <option value="#22C55E">Hijau</option>
-                          <option value="#3B82F6">Biru</option>
-                          <option value="#F59E0B">Kuning</option>
-                          <option value="#EF4444">Merah</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <input
-                        type="text" className="input" style={{ padding: '7px 10px', fontSize: 13, flex: 1 }}
-                        placeholder="Nama kegiatan (contoh: Sarapan)"
-                        value={item.label}
-                        onChange={e => updateTempItem(idx, { label: e.target.value })}
-                      />
-                      <button
-                        onClick={() => deleteTempItem(idx)}
-                        style={{
-                          background: 'var(--color-danger-pale)', border: 'none',
-                          borderRadius: 'var(--radius-md)', width: 34, height: 34,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          cursor: 'pointer', flexShrink: 0,
-                        }}
-                      >
-                        <Trash2 size={14} color="var(--color-danger)" />
-                      </button>
-                    </div>
+                {!(tempJadwal[activeDay]) || tempJadwal[activeDay].length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--color-text-muted)', fontSize: 13 }}>
+                    Belum ada kegiatan untuk hari {activeDay}.
                   </div>
-                ))}
+                ) : (
+                  tempJadwal[activeDay].map((item, idx) => (
+                    <div key={idx} style={{
+                      display: 'flex', flexDirection: 'column', gap: 8,
+                      padding: 12, borderRadius: 'var(--radius-lg)',
+                      background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+                    }}>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <div className="input-group" style={{ flex: 1 }}>
+                          <label className="input-label" style={{ fontSize: 9 }}>Mulai</label>
+                          <input
+                            type="time" className="input" style={{ padding: '6px 8px', fontSize: 12 }}
+                            value={item.start}
+                            onChange={e => updateTempItem(idx, { start: e.target.value })}
+                          />
+                        </div>
+                        <div className="input-group" style={{ flex: 1 }}>
+                          <label className="input-label" style={{ fontSize: 9 }}>Selesai</label>
+                          <input
+                            type="time" className="input" style={{ padding: '6px 8px', fontSize: 12 }}
+                            value={item.end}
+                            onChange={e => updateTempItem(idx, { end: e.target.value })}
+                          />
+                        </div>
+                        <div className="input-group" style={{ width: 52 }}>
+                          <label className="input-label" style={{ fontSize: 9 }}>Ikon</label>
+                          <select
+                            className="input" style={{ padding: '5px', fontSize: 14 }}
+                            value={item.icon}
+                            onChange={e => updateTempItem(idx, { icon: e.target.value })}
+                          >
+                            {['⏰', '🍳', '🏋️', '🥗', '🍱', '🍎', '🍽️', '🌙', '🏃', '💧', '💊', '📝', '🔥'].map(em => (
+                              <option key={em} value={em}>{em}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="input-group" style={{ width: 72 }}>
+                          <label className="input-label" style={{ fontSize: 9 }}>Warna</label>
+                          <select
+                            className="input" style={{ padding: '5px', fontSize: 11 }}
+                            value={item.warna}
+                            onChange={e => updateTempItem(idx, { warna: e.target.value })}
+                          >
+                            <option value="#FF6B00">Jingga</option>
+                            <option value="#22C55E">Hijau</option>
+                            <option value="#3B82F6">Biru</option>
+                            <option value="#F59E0B">Kuning</option>
+                            <option value="#EF4444">Merah</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <input
+                          type="text" className="input" style={{ padding: '7px 10px', fontSize: 13, flex: 1 }}
+                          placeholder="Nama kegiatan (contoh: Sarapan)"
+                          value={item.label}
+                          onChange={e => updateTempItem(idx, { label: e.target.value })}
+                        />
+                        <button
+                          onClick={() => deleteTempItem(idx)}
+                          style={{
+                            background: 'var(--color-danger-pale)', border: 'none',
+                            borderRadius: 'var(--radius-md)', width: 34, height: 34,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', flexShrink: 0,
+                          }}
+                        >
+                          <Trash2 size={14} color="var(--color-danger)" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
 
               <button
