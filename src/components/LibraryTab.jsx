@@ -31,6 +31,13 @@ const MAP_ALAT_GAMBAR = {
   'Beban Tubuh': '/images/beban_tubuh.png',
 };
 
+const MAP_NAMA_KATEGORI = {
+  'Komposit': 'Gabungan Otot',
+  'Isolasi': 'Fokus Otot',
+  'Beban Tubuh': 'Berat Badan',
+  'Kardio': 'Kardio'
+};
+
 export default function LibraryTab() {
   const [activeGroup, setActiveGroup] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -229,7 +236,7 @@ export default function LibraryTab() {
                               fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
                               background: `${MUSCLE_COLORS[ex.ototTarget]}18`, color: MUSCLE_COLORS[ex.ototTarget] || 'var(--color-primary)',
                               textTransform: 'uppercase', letterSpacing: '0.05em',
-                            }}>{ex.kategori}</span>
+                            }}>{MAP_NAMA_KATEGORI[ex.kategori] || ex.kategori}</span>
                             {ex.kustom && <span className="badge badge--blue" style={{ padding: '2px 7px', fontSize: 9 }}>Kustom</span>}
                           </div>
                         </div>
@@ -377,7 +384,7 @@ export default function LibraryTab() {
                       alignItems: 'center',
                       marginLeft: 'auto'
                     }}>
-                      {lastSelected.kategori}
+                      {MAP_NAMA_KATEGORI[lastSelected.kategori] || lastSelected.kategori}
                     </span>
                   </div>
                 </div>
@@ -468,9 +475,9 @@ export default function LibraryTab() {
                 <div className="input-group">
                   <label className="input-label">Kategori</label>
                   <select className="input" value={newEx.kategori} onChange={e => setNewEx(p => ({ ...p, kategori: e.target.value }))}>
-                    <option value="Komposit">Komposit</option>
-                    <option value="Isolasi">Isolasi</option>
-                    <option value="Beban Tubuh">Beban Tubuh</option>
+                    <option value="Komposit">Gabungan Otot (Komposit)</option>
+                    <option value="Isolasi">Fokus Otot (Isolasi)</option>
+                    <option value="Beban Tubuh">Berat Badan</option>
                     <option value="Kardio">Kardio</option>
                   </select>
                 </div>
