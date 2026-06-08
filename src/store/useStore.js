@@ -113,6 +113,19 @@ const useStore = create(
       // ---- Preferensi Tema ----
       tema: 'dark',  // 'dark' | 'light'
       setTema: (tema) => set({ tema: tema }),
+
+      // ---- Jadwal Harian Kustom ----
+      jadwalHarian: [
+        { start: '05:30', end: '06:00', label: 'Bangun Tidur',          icon: '⏰', warna: '#FF6B00' },
+        { start: '06:00', end: '07:00', label: 'Sarapan',               icon: '🍳', warna: '#22C55E' },
+        { start: '07:00', end: '09:00', label: 'Latihan di Gym',        icon: '🏋️', warna: '#FF6B00' },
+        { start: '09:00', end: '09:30', label: 'Makanan Pasca-Latihan',  icon: '🥗', warna: '#22C55E' },
+        { start: '12:30', end: '13:30', label: 'Makan Siang',           icon: '🍱', warna: '#22C55E' },
+        { start: '15:00', end: '16:00', label: 'Cemilan / Istirahat',   icon: '🍎', warna: '#F59E0B' },
+        { start: '18:30', end: '19:30', label: 'Makan Malam',           icon: '🍽️', warna: '#22C55E' },
+        { start: '22:00', end: '05:30', label: 'Tidur',                 icon: '🌙', warna: '#3B82F6' },
+      ],
+      setJadwalHarian: (jadwal) => set({ jadwalHarian: jadwal }),
     }),
     {
       name: 'bodyfit-store',
@@ -120,6 +133,7 @@ const useStore = create(
         profil: state.profil,
         tabAktif: state.tabAktif,
         tema: state.tema,
+        jadwalHarian: state.jadwalHarian,
       }),
     }
   )

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Flame, Droplets, Moon, Dumbbell, TrendingUp, ChevronRight, Plus, Zap, User, MessageSquare } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Flame, Droplets, Moon, Dumbbell, TrendingUp, ChevronRight, Plus, Zap, User, MessageSquare, Trash2, X, RotateCcw } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import useStore from '../store/useStore';
@@ -18,16 +18,7 @@ const MOTIVATIONAL_QUOTES = [
   "Setiap latihan adalah sebuah kemajuan.",
 ];
 
-const JADWAL_HARIAN = [
-  { start: '05:30', end: '06:00', label: 'Bangun Tidur',          icon: '⏰', warna: '#FF6B00' },
-  { start: '06:00', end: '07:00', label: 'Sarapan',               icon: '🍳', warna: '#22C55E' },
-  { start: '07:00', end: '09:00', label: 'Latihan di Gym',        icon: '🏋️', warna: '#FF6B00' },
-  { start: '09:00', end: '09:30', label: 'Makanan Pasca-Latihan',  icon: '🥗', warna: '#22C55E' },
-  { start: '12:30', end: '13:30', label: 'Makan Siang',           icon: '🍱', warna: '#22C55E' },
-  { start: '15:00', end: '16:00', label: 'Cemilan / Istirahat',   icon: '🍎', warna: '#F59E0B' },
-  { start: '18:30', end: '19:30', label: 'Makan Malam',           icon: '🍽️', warna: '#22C55E' },
-  { start: '22:00', end: '05:30', label: 'Tidur',                 icon: '🌙', warna: '#3B82F6' },
-];
+
 
 function StreakCard({ streak }) {
   return (
@@ -85,7 +76,54 @@ function MacroRing({ label, current, target, color }) {
 }
 
 export default function DashboardTab() {
-  const { profil, hitungTDEE, setTabAktif } = useStore();
+  const { profil, hitungTDEE, setTabAktif, jadwalHarian, setJadwalHarian } = useStore();
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [tempJadwal, setTempJadwal] = useState([]);
+
+  const openEditModal = () => {
+    setTempJadwal([...jadwalHarian]);
+    setShowEditModal(true);
+  };
+
+  const updateTempItem = (index, updates) => {
+    setTempJadwal(prev => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], ...updates };
+      return copy;
+    });
+  };
+
+  const deleteTempItem = (index) => {
+    setTempJadwal(prev => prev.filter((_, idx) => idx !== index));
+  };
+
+  const addTempItem = () => {
+    setTempJadwal(prev => [
+      ...prev,
+      { start: '12:00', end: '13:00', label: 'Kegiatan Baru', icon: '📝', warna: '#3B82F6' }
+    ]);
+  };
+
+  const resetToDefault = () => {
+    const defaultJadwal = [
+      { start: '05:30', end: '06:00', label: 'Bangun Tidur',          icon: '⏰', warna: '#FF6B00' },
+      { start: '06:00', end: '07:00', label: 'Sarapan',               icon: '🍳', warna: '#22C55E' },
+      { start: '07:00', end: '09:00', label: 'Latihan di Gym',        icon: '🏋️', warna: '#FF6B00' },
+      { start: '09:00', end: '09:30', label: 'Makanan Pasca-Latihan',  icon: '🥗', warna: '#22C55E' },
+      { start: '12:30', end: '13:30', label: 'Makan Siang',           icon: '🍱', warna: '#22C55E' },
+      { start: '15:00', end: '16:00', label: 'Cemilan / Istirahat',   icon: '🍎', warna: '#F59E0B' },
+      { start: '18:30', end: '19:30', label: 'Makan Malam',           icon: '🍽️', warna: '#22C55E' },
+      { start: '22:00', end: '05:30', label: 'Tidur',                 icon: '🌙', warna: '#3B82F6' },
+    ];
+    setTempJadwal(defaultJadwal);
+  };
+
+  const saveJadwal = () => {
+    const sorted = [...tempJadwal].sort((a, b) => a.start.localeCompare(b.start));
+    setJadwalHarian(sorted);
+    setShowEditModal(false);
+  };
+
   const macros = hitungTDEE();
   const today = new Date().toISOString().split('T')[0];
   
@@ -243,9 +281,10 @@ export default function DashboardTab() {
           <div className="card">
             <div className="section-header">
               <span className="section-title">Jadwal Harian</span>
+              <button className="section-action" onClick={openEditModal}>Kelola</button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
-              {JADWAL_HARIAN.map((item, i) => {
+              {jadwalHarian.map((item, i) => {
                 const now = new Date();
                 const [sh, sm] = item.start.split(':').map(Number);
                 const [eh, em] = item.end.split(':').map(Number);
@@ -337,6 +376,128 @@ export default function DashboardTab() {
 
         <div style={{ height: 8 }} />
       </div>
+
+      {/* Modal Edit Jadwal */}
+      <AnimatePresence>
+        {showEditModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="modal-overlay"
+            onClick={(e) => e.target === e.currentTarget && setShowEditModal(false)}
+            style={{ zIndex: 1100 }}
+          >
+            <motion.div
+              initial={{ y: 300, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 300, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className="modal-sheet"
+              style={{ overflowY: 'auto', maxHeight: '90dvh', padding: '24px 20px 32px' }}
+            >
+              <div className="modal-handle" />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <div className="modal-title" style={{ margin: 0 }}>Kelola Jadwal Harian</div>
+                <button
+                  onClick={resetToDefault}
+                  className="btn btn--secondary"
+                  style={{ padding: '6px 12px', fontSize: 11, gap: 5 }}
+                >
+                  <RotateCcw size={12} /> Reset
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+                {tempJadwal.map((item, idx) => (
+                  <div key={idx} style={{
+                    display: 'flex', flexDirection: 'column', gap: 8,
+                    padding: 12, borderRadius: 'var(--radius-lg)',
+                    background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+                  }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <div className="input-group" style={{ flex: 1 }}>
+                        <label className="input-label" style={{ fontSize: 9 }}>Mulai</label>
+                        <input
+                          type="time" className="input" style={{ padding: '6px 8px', fontSize: 12 }}
+                          value={item.start}
+                          onChange={e => updateTempItem(idx, { start: e.target.value })}
+                        />
+                      </div>
+                      <div className="input-group" style={{ flex: 1 }}>
+                        <label className="input-label" style={{ fontSize: 9 }}>Selesai</label>
+                        <input
+                          type="time" className="input" style={{ padding: '6px 8px', fontSize: 12 }}
+                          value={item.end}
+                          onChange={e => updateTempItem(idx, { end: e.target.value })}
+                        />
+                      </div>
+                      <div className="input-group" style={{ width: 52 }}>
+                        <label className="input-label" style={{ fontSize: 9 }}>Ikon</label>
+                        <select
+                          className="input" style={{ padding: '5px', fontSize: 14 }}
+                          value={item.icon}
+                          onChange={e => updateTempItem(idx, { icon: e.target.value })}
+                        >
+                          {['⏰', '🍳', '🏋️', '🥗', '🍱', '🍎', '🍽️', '🌙', '🏃', '💧', '💊', '📝', '🔥'].map(em => (
+                            <option key={em} value={em}>{em}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="input-group" style={{ width: 72 }}>
+                        <label className="input-label" style={{ fontSize: 9 }}>Warna</label>
+                        <select
+                          className="input" style={{ padding: '5px', fontSize: 11 }}
+                          value={item.warna}
+                          onChange={e => updateTempItem(idx, { warna: e.target.value })}
+                        >
+                          <option value="#FF6B00">Jingga</option>
+                          <option value="#22C55E">Hijau</option>
+                          <option value="#3B82F6">Biru</option>
+                          <option value="#F59E0B">Kuning</option>
+                          <option value="#EF4444">Merah</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input
+                        type="text" className="input" style={{ padding: '7px 10px', fontSize: 13, flex: 1 }}
+                        placeholder="Nama kegiatan (contoh: Sarapan)"
+                        value={item.label}
+                        onChange={e => updateTempItem(idx, { label: e.target.value })}
+                      />
+                      <button
+                        onClick={() => deleteTempItem(idx)}
+                        style={{
+                          background: 'var(--color-danger-pale)', border: 'none',
+                          borderRadius: 'var(--radius-md)', width: 34, height: 34,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer', flexShrink: 0,
+                        }}
+                      >
+                        <Trash2 size={14} color="var(--color-danger)" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                className="btn btn--ghost btn--full" style={{ marginBottom: 20 }}
+                onClick={addTempItem}
+              >
+                + Tambah Kegiatan Baru
+              </button>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn btn--secondary" style={{ flex: 1 }} onClick={() => setShowEditModal(false)}>Batal</button>
+                <button className="btn btn--primary" style={{ flex: 2 }} onClick={saveJadwal}>Simpan Jadwal</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
