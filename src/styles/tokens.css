@@ -1,0 +1,118 @@
+/* ============================================
+   BODYFIT — Design Tokens
+   Black × White × Orange — Athletic Premium
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* ---- Core Colors ---- */
+  --color-bg:            #0B0B0C;
+  --color-bg-2:          #111113;
+  --color-surface:       #161618;
+  --color-surface-2:     #1E1E21;
+  --color-surface-3:     #252528;
+  --color-border:        #2A2A2E;
+  --color-border-light:  #333337;
+
+  /* ---- Text ---- */
+  --color-text:          #FFFFFF;
+  --color-text-sub:      #A1A1AA;
+  --color-text-muted:    #52525B;
+  --color-text-inverse:  #0B0B0C;
+
+  /* ---- Accent: Orange ---- */
+  --color-primary:       #FF6B00;
+  --color-primary-dark:  #E05C00;
+  --color-primary-light: #FF8C33;
+  --color-primary-pale:  rgba(255, 107, 0, 0.12);
+  --color-primary-glow:  rgba(255, 107, 0, 0.25);
+
+  /* ---- Semantic Colors ---- */
+  --color-success:       #22C55E;
+  --color-success-pale:  rgba(34, 197, 94, 0.12);
+  --color-warning:       #F59E0B;
+  --color-warning-pale:  rgba(245, 158, 11, 0.12);
+  --color-danger:        #EF4444;
+  --color-danger-pale:   rgba(239, 68, 68, 0.12);
+  --color-info:          #3B82F6;
+  --color-info-pale:     rgba(59, 130, 246, 0.12);
+
+  /* ---- Muscle Group Colors ---- */
+  --color-chest:         #FF6B00;
+  --color-back:          #3B82F6;
+  --color-legs:          #22C55E;
+  --color-shoulders:     #A855F7;
+  --color-arms:          #F59E0B;
+  --color-core:          #EF4444;
+
+  /* ---- Typography ---- */
+  --font-family:     'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-size-xs:    0.75rem;
+  --font-size-sm:    0.875rem;
+  --font-size-base:  1rem;
+  --font-size-lg:    1.125rem;
+  --font-size-xl:    1.25rem;
+  --font-size-2xl:   1.5rem;
+  --font-size-3xl:   1.875rem;
+  --font-size-4xl:   2.25rem;
+
+  --font-weight-light:    300;
+  --font-weight-normal:   400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+  --font-weight-extrabold: 800;
+
+  --line-height-tight:   1.25;
+  --line-height-normal:  1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ---- Spacing ---- */
+  --space-1:   0.25rem;
+  --space-2:   0.5rem;
+  --space-3:   0.75rem;
+  --space-4:   1rem;
+  --space-5:   1.25rem;
+  --space-6:   1.5rem;
+  --space-8:   2rem;
+  --space-10:  2.5rem;
+  --space-12:  3rem;
+  --space-16:  4rem;
+
+  /* ---- Border Radius ---- */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   18px;
+  --radius-2xl:  24px;
+  --radius-full: 9999px;
+
+  /* ---- Shadows ---- */
+  --shadow-xs:     0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm:     0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-md:     0 4px 16px rgba(0, 0, 0, 0.6);
+  --shadow-lg:     0 8px 32px rgba(0, 0, 0, 0.7);
+  --shadow-primary: 0 4px 20px rgba(255, 107, 0, 0.35);
+  --shadow-glow:    0 0 24px rgba(255, 107, 0, 0.2);
+
+  /* ---- Transitions ---- */
+  --transition-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base:   250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:   400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ---- Z-index ---- */
+  --z-base:     0;
+  --z-raised:   10;
+  --z-sticky:   100;
+  --z-overlay:  200;
+  --z-modal:    300;
+  --z-toast:    400;
+
+  /* ---- Layout ---- */
+  --app-max-width:  480px;
+  --header-height:  60px;
+  --bottom-nav-h:   72px;
+  --safe-bottom:    env(safe-area-inset-bottom, 0px);
+}
