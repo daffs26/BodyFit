@@ -5,6 +5,7 @@ import { ChevronRight, Target, Scale, Calendar } from 'lucide-react';
 import { db } from '../db/db';
 import useStore from '../store/useStore';
 import ProgramRekomendasiPage from './ProgramRekomendasiPage';
+import LifestyleGuide from './LifestyleGuide';
 
 // ── Data tingkat aktivitas ──────────────────────────────────────────────────
 
@@ -234,6 +235,19 @@ export default function PlannerTab() {
                 <span>Ketuk tombol panah untuk membuat jadwal latihan yang dipersonalisasi berdasarkan fokus otot dan waktu latihanmu.</span>
               </div>
             </div>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <div style={{ marginBottom: 10 }}>
+              <div className="section-title">Panduan Gaya Hidupmu</div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>
+                Disesuaikan dengan tujuan dan kecepatan progressmu
+              </div>
+            </div>
+            <LifestyleGuide
+              tipeTarget={profil.tipeTarget || 'defisit'}
+              kecepatanProgress={profil.kecepatanProgress || 'normal'}
+            />
           </motion.div>
 
           <div style={{ height: 8 }} />

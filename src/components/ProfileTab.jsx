@@ -824,12 +824,30 @@ export default function ProfileTab() {
           </div>
         </motion.div>
 
-        {/* App Info */}
+        {/* App Info + Reset Onboarding */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <div style={{ textAlign: 'center', padding: 'var(--space-4)' }}>
             <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-primary)', letterSpacing: '-0.02em' }}>BodyFit</div>
             <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>v1.0.0 · 100% Lokal · Tidak Perlu Akun</div>
             <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>Data Anda tetap berada di perangkat Anda</div>
+
+            <button
+              onClick={() => {
+                if (window.confirm('Reset setup awal? Semua pengaturan profil akan dikonfigurasi ulang.')) {
+                  setProfil({ onboardingSelesai: false });
+                }
+              }}
+              style={{
+                marginTop: 16, padding: '8px 20px',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--color-border)',
+                background: 'transparent', cursor: 'pointer',
+                fontSize: 12, color: 'var(--color-text-muted)',
+                transition: 'all 0.18s',
+              }}
+            >
+              Ulangi Setup Awal
+            </button>
           </div>
         </motion.div>
 

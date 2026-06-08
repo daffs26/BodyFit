@@ -10,6 +10,7 @@ import AnalyticsTab from './components/AnalyticsTab';
 import LibraryTab from './components/LibraryTab';
 import PlannerTab from './components/PlannerTab';
 import ProfileTab from './components/ProfileTab';
+import OnboardingScreen from './components/OnboardingScreen';
 
 const TABS = [
   { id: 'dashboard', label: 'Dasbor',   icon: Home,     component: DashboardTab },
@@ -27,13 +28,28 @@ const pageVariants = {
 };
 
 export default function App() {
-  const { tabAktif, setTabAktif, tema } = useStore();
-  
+  const { tabAktif, setTabAktif, tema, profil } = useStore();
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', tema || 'dark');
   }, [tema]);
 
   const ActiveComponent = TABS.find(t => t.id === tabAktif)?.component || DashboardTab;
+
+  // Tampilkan onboarding jika belum selesai
+  if (!profil.onboardingSelesai) {
+    return (
+      <motion.div
+        key="onboarding"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, scale: 0.97 }}
+        transition={{ duration: 0.3 }}
+      >
+        <OnboardingScreen />
+      </motion.div>
+    );
+  }
 
   return (
     <div className="app-wrapper">
@@ -73,4 +89,3 @@ export default function App() {
     </div>
   );
 }
-

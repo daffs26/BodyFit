@@ -21,6 +21,8 @@ const useStore = create(
         latihanPerMinggu: 4,
         targetTidur: 7.5,          // jam
         targetAir: 2500,         // ml
+        kecepatanProgress: 'normal', // 'cepat' | 'normal' | 'lambat'
+        onboardingSelesai: false,    // false = tampilkan onboarding
       },
       setProfil: (updates) => set((state) => ({
         profil: { ...state.profil, ...updates }
@@ -28,7 +30,7 @@ const useStore = create(
 
       // ---- TDEE & Makro (dihitung dari profil) ----
       hitungTDEE: () => {
-        const { gender, usia, tinggi, berat, tingkatAktivitas, tipeTarget } = get().profil;
+        const { gender, usia, tinggi, berat, tingkatAktivitas, tipeTarget, kecepatanProgress } = get().profil;
         // Mifflin-St Jeor BMR
         let bmr = gender === 'pria'
           ? 10 * berat + 6.25 * tinggi - 5 * usia + 5
@@ -43,9 +45,18 @@ const useStore = create(
         };
         const tdee = bmr * (pengaliAktivitas[tingkatAktivitas] || 1.55);
 
-        let kaloriTarget = tdee;
-        if (tipeTarget === 'surplus')      kaloriTarget = tdee + 400;
-        if (tipeTarget === 'defisit')      kaloriTarget = tdee - 400;
+        // Delta kalori berdasarkan kecepatan progress
+        const deltaMap = {
+          cepat:  { surplus: 600,  defisit: -600 },
+          normal: { surplus: 400,  defisit: -400 },
+          lambat: { surplus: 200,  defisit: -200 },
+        };
+        const speed = kecepatanProgress || 'normal';
+        let delta = 0;
+        if (tipeTarget === 'surplus') delta = (deltaMap[speed]?.surplus) ?? 400;
+        if (tipeTarget === 'defisit') delta = (deltaMap[speed]?.defisit) ?? -400;
+
+        const kaloriTarget = tdee + delta;
 
         const protein = Math.round(berat * (tipeTarget === 'defisit' ? 2.2 : 2.0));
         const lemak   = Math.round((kaloriTarget * 0.25) / 9);
@@ -58,6 +69,8 @@ const useStore = create(
           protein,
           lemak,
           karbohidrat,
+          delta,
+          speed,
         };
       },
 
