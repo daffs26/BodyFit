@@ -19,14 +19,14 @@ const MOTIVATIONAL_QUOTES = [
 ];
 
 const JADWAL_HARIAN = [
-  { waktu: '05:30', label: 'Bangun Tidur',          icon: '⏰', warna: '#FF6B00' },
-  { waktu: '06:00', label: 'Sarapan',               icon: '🍳', warna: '#22C55E' },
-  { waktu: '07:00', label: 'Latihan di Gym',        icon: '🏋️', warna: '#FF6B00' },
-  { waktu: '09:00', label: 'Makanan Pasca-Latihan',  icon: '🥗', warna: '#22C55E' },
-  { waktu: '12:30', label: 'Makan Siang',           icon: '🍱', warna: '#22C55E' },
-  { waktu: '15:00', label: 'Cemilan / Istirahat',   icon: '🍎', warna: '#F59E0B' },
-  { waktu: '18:30', label: 'Makan Malam',           icon: '🍽️', warna: '#22C55E' },
-  { waktu: '22:00', label: 'Tidur',                 icon: '🌙', warna: '#3B82F6' },
+  { start: '05:30', end: '06:00', label: 'Bangun Tidur',          icon: '⏰', warna: '#FF6B00' },
+  { start: '06:00', end: '07:00', label: 'Sarapan',               icon: '🍳', warna: '#22C55E' },
+  { start: '07:00', end: '09:00', label: 'Latihan di Gym',        icon: '🏋️', warna: '#FF6B00' },
+  { start: '09:00', end: '09:30', label: 'Makanan Pasca-Latihan',  icon: '🥗', warna: '#22C55E' },
+  { start: '12:30', end: '13:30', label: 'Makan Siang',           icon: '🍱', warna: '#22C55E' },
+  { start: '15:00', end: '16:00', label: 'Cemilan / Istirahat',   icon: '🍎', warna: '#F59E0B' },
+  { start: '18:30', end: '19:30', label: 'Makan Malam',           icon: '🍽️', warna: '#22C55E' },
+  { start: '22:00', end: '05:30', label: 'Tidur',                 icon: '🌙', warna: '#3B82F6' },
 ];
 
 function StreakCard({ streak }) {
@@ -247,12 +247,22 @@ export default function DashboardTab() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
               {JADWAL_HARIAN.map((item, i) => {
                 const now = new Date();
-                const [h, m] = item.waktu.split(':').map(Number);
-                const itemDate = new Date(); itemDate.setHours(h, m, 0, 0);
-                const isPast = now > itemDate;
-                const isCurrent = i < JADWAL_HARIAN.length - 1
-                  ? (() => { const [nh, nm] = JADWAL_HARIAN[i+1].waktu.split(':').map(Number); const next = new Date(); next.setHours(nh, nm, 0, 0); return now >= itemDate && now < next; })()
-                  : false;
+                const [sh, sm] = item.start.split(':').map(Number);
+                const [eh, em] = item.end.split(':').map(Number);
+
+                const startDate = new Date(); startDate.setHours(sh, sm, 0, 0);
+                const endDate = new Date(); endDate.setHours(eh, em, 0, 0);
+
+                if (endDate < startDate) {
+                  if (now >= startDate) {
+                    endDate.setDate(endDate.getDate() + 1);
+                  } else {
+                    startDate.setDate(startDate.getDate() - 1);
+                  }
+                }
+
+                const isCurrent = now >= startDate && now < endDate;
+                const isPast = now >= endDate;
 
                 return (
                   <div key={i} style={{
@@ -263,10 +273,10 @@ export default function DashboardTab() {
                     border: isCurrent ? '1px solid rgba(255,107,0,0.2)' : '1px solid transparent',
                   }}>
                     <div style={{
-                      width: 38, textAlign: 'center',
-                      fontSize: 11, fontWeight: 700, letterSpacing: '0.01em',
+                      width: 76, textAlign: 'center',
+                      fontSize: 10, fontWeight: 700, letterSpacing: '-0.01em',
                       color: isCurrent ? 'var(--color-primary)' : isPast ? 'var(--color-text-muted)' : 'var(--color-text-sub)',
-                    }}>{item.waktu}</div>
+                    }}>{item.start} - {item.end}</div>
                     <div style={{
                       width: 34, height: 34, borderRadius: '50%',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
