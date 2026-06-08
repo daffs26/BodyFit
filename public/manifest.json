@@ -3,9 +3,9 @@
   "name": "BodyFit — Gym Progress Tracker",
   "icons": [
     {
-      "src": "/icon.svg",
-      "type": "image/svg+xml",
-      "sizes": "any"
+      "src": "/icon.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
   ],
   "start_url": "./",
