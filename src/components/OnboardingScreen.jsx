@@ -165,9 +165,16 @@ function StepSplash({ onNext }) {
       >
         <div style={{
           fontSize: 40, fontWeight: 800, color: 'var(--color-primary)',
-          letterSpacing: '-0.03em', lineHeight: 1, marginBottom: 8,
+          letterSpacing: '-0.03em', lineHeight: 1, marginBottom: 2,
         }}>
           BodyFit
+        </div>
+        <div style={{
+          fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 600,
+          letterSpacing: '0.08em', marginBottom: 16, textTransform: 'uppercase',
+          opacity: 0.8
+        }}>
+          @daffs_26
         </div>
         <div style={{
           fontSize: 16, color: 'var(--color-text-sub)', fontWeight: 500,

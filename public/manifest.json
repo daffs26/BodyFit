@@ -1,0 +1,16 @@
+{
+  "short_name": "BodyFit",
+  "name": "BodyFit — Gym Progress Tracker",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "start_url": "./",
+  "background_color": "#0B0B0C",
+  "theme_color": "#0B0B0C",
+  "display": "standalone",
+  "orientation": "portrait"
+}

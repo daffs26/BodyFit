@@ -827,8 +827,9 @@ export default function ProfileTab() {
         {/* App Info + Reset Onboarding */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <div style={{ textAlign: 'center', padding: 'var(--space-4)' }}>
-            <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-primary)', letterSpacing: '-0.02em' }}>BodyFit</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>v1.0.0 · 100% Lokal · Tidak Perlu Akun</div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-primary)', letterSpacing: '-0.02em', marginBottom: 2 }}>BodyFit</div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8, opacity: 0.8 }}>@daffs_26</div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>v1.0.0 · 100% Lokal · Tidak Perlu Akun</div>
             <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>Data Anda tetap berada di perangkat Anda</div>
 
             <button
