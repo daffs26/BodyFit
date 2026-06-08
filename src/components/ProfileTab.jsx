@@ -829,7 +829,6 @@ export default function ProfileTab() {
           <div style={{ textAlign: 'center', padding: 'var(--space-4)' }}>
             <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-primary)', letterSpacing: '-0.02em', marginBottom: 2 }}>BodyFit</div>
             <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8, opacity: 0.8 }}>@daffs_26</div>
-            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>Data Anda tetap berada di perangkat Anda</div>
 
             <button
               onClick={() => {

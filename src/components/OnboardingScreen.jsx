@@ -212,14 +212,6 @@ function StepSplash({ onNext }) {
         Mulai Setup <ChevronRight size={18} />
       </motion.button>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 16 }}
-      >
-        100% lokal · tidak perlu akun · data tersimpan di perangkatmu
-      </motion.div>
     </motion.div>
   );
 }
