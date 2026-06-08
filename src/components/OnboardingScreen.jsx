@@ -678,8 +678,8 @@ export default function OnboardingScreen() {
         </AnimatePresence>
       )}
 
-      {/* Steps 1–5 */}
-      {step >= 1 && step <= 5 && (
+      {/* Steps 1–4 */}
+      {step >= 1 && step <= 4 && (
         <>
           {/* Header */}
           <div style={{ padding: '16px 20px 8px', flexShrink: 0 }}>
