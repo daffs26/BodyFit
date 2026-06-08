@@ -456,104 +456,6 @@ function StepGoal({ data, onChange, onBack, onNext }) {
   );
 }
 
-function StepKecepatan({ data, onChange, onBack, onNext }) {
-  const goalType = data.tipeTarget === 'surplus' ? 'surplus' : 'defisit';
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '0 20px', flex: 1 }}>
-      <div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em', marginBottom: 6 }}>
-          Seberapa Cepat?
-        </div>
-        <div style={{ fontSize: 14, color: 'var(--color-text-muted)' }}>
-          Kecepatan progress mempengaruhi berapa kalori yang kamu tambah atau kurangi setiap harinya.
-        </div>
-      </div>
-
-      {data.tipeTarget === 'pemeliharaan' ? (
-        <div style={{
-          padding: 16, borderRadius: 'var(--radius-xl)',
-          background: 'var(--color-primary-pale)',
-          border: '1px solid rgba(255,107,0,0.3)',
-          textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 14, color: 'var(--color-primary)', fontWeight: 600 }}>
-            Untuk Maintenance, kalori target = TDEE (tidak ada delta)
-          </div>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {KECEPATAN.map(k => {
-            const IconEl = k.ikon;
-            const isActive = data.kecepatanProgress === k.id;
-            return (
-              <button
-                key={k.id}
-                onClick={() => onChange({ kecepatanProgress: k.id })}
-                style={{
-                  padding: '14px 16px', borderRadius: 'var(--radius-xl)',
-                  border: `2px solid ${isActive ? k.color : 'var(--color-border)'}`,
-                  background: isActive ? k.bg : 'var(--color-surface)',
-                  cursor: 'pointer', textAlign: 'left', transition: 'all 0.18s',
-                  position: 'relative',
-                }}
-              >
-                {k.recommended && (
-                  <div style={{
-                    position: 'absolute', top: -8, right: 12,
-                    fontSize: 9, fontWeight: 800, letterSpacing: '0.06em',
-                    background: k.color, color: 'white',
-                    padding: '2px 8px', borderRadius: 99,
-                  }}>
-                    DIREKOMENDASIKAN
-                  </div>
-                )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                    background: isActive ? k.color : 'var(--color-surface-2)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'all 0.18s',
-                  }}>
-                    <IconEl size={18} color={isActive ? 'white' : k.color} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: isActive ? k.color : 'var(--color-text)' }}>
-                      {k.label}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{k.sub}</div>
-                  </div>
-                  <div style={{
-                    flexShrink: 0, textAlign: 'right',
-                  }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: isActive ? k.color : 'var(--color-text-sub)' }}>
-                      {k.delta[goalType]} kkal
-                    </div>
-                    <div style={{ fontSize: 10, color: 'var(--color-text-muted)', fontWeight: 600 }}>
-                      {k.perMinggu[goalType]}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.55, paddingLeft: 48 }}>
-                  {k.desc}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      <NavButtons
-        onBack={onBack}
-        onNext={() => {
-          if (data.tipeTarget === 'pemeliharaan') onChange({ kecepatanProgress: 'normal' });
-          onNext();
-        }}
-        nextDisabled={data.tipeTarget !== 'pemeliharaan' && !data.kecepatanProgress}
-      />
-    </div>
-  );
-}
 
 function StepAktivitas({ data, onChange, onBack, onNext }) {
   return (
@@ -717,7 +619,7 @@ function StepDone({ data, onFinish }) {
 
 // ── Main Onboarding Component ─────────────────────────────────────────────────
 
-const TOTAL_STEPS = 5; // tidak termasuk splash (0) dan done (6)
+const TOTAL_STEPS = 4; // tidak termasuk splash (0) dan done (5)
 
 export default function OnboardingScreen() {
   const { setProfil } = useStore();
@@ -812,12 +714,6 @@ export default function OnboardingScreen() {
               {step === 4 && (
                 <motion.div key="s4" variants={stepVariants} initial="initial" animate="animate" exit="exit"
                   style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                  <StepKecepatan data={formData} onChange={updateData} onBack={back} onNext={next} />
-                </motion.div>
-              )}
-              {step === 5 && (
-                <motion.div key="s5" variants={stepVariants} initial="initial" animate="animate" exit="exit"
-                  style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                   <StepAktivitas data={formData} onChange={updateData} onBack={back} onNext={next} />
                 </motion.div>
               )}
@@ -826,8 +722,8 @@ export default function OnboardingScreen() {
         </>
       )}
 
-      {/* Step 6 — Done */}
-      {step === 6 && (
+      {/* Step 5 — Done */}
+      {step === 5 && (
         <div style={{
           flex: 1, overflowY: 'auto',
           display: 'flex', flexDirection: 'column',
